@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append("..")
-from tensor import Graph, Tensor
+from tensor import Tensor
 import nn
 import functional as F
 from optimizer import Adam

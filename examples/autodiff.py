@@ -25,6 +25,8 @@ for i in range(20):
     x.zero_grad()
     y.backward()
     x.data -= lr * x.grad
+    if i % 5 == 4:
+        print("Epoch {:2d}, y : {:.6f}".format(i + 1, y.data))
 
 x = np.linspace(0, 10, 101)
 plt.plot(x, np.log((x - 7)**2 + 10), label="$f(x)=\log((x-7)^2+10)$")

@@ -1,29 +1,27 @@
 import numpy as np
 
-try:
-    from graphviz import Digraph
-except:
-    Digraph = None
-
 
 class Graph:
-    epsilon = 1e-100
+    '''
+    计算图，全局共用一个动态计算图
+    '''
     node_list = list()
 
     @classmethod
     def add_node(cls, node):
+        '''添加静态图节点'''
         cls.node_list.append(node)
 
-    @classmethod
-    def rm_node(cls, node):
-        cls.node_list.remove(node)
-
-    @classmethod
     def clear(cls):
+        '''清空计算图'''
         cls.node_list.clear()
 
     @classmethod
     def free_graph(cls):
+        '''
+        释放计算图，和clear的区别在于我们不会删除叶子节点，
+        这一点和PyTorch类似。
+        '''
         new_list = []
         for node in Graph.node_list:
             node.next.clear()
@@ -36,9 +34,54 @@ class Graph:
 
 
 class Tensor:
-    def __init__(self, value, requires_grad=False) -> None:
-        self.data: np.ndarray = np.array(value, dtype=np.float)
+    '''
+    将数据(NumPy数组)包装成可微分张量
+
+    Parameters
+    ----------
+    data : ndarray
+        张量数据，只要是np.array能够转换的数据;
+    requires_grad : bool, default=False
+        是否需要求梯度;
+    dtype : default=None
+        数据类型，和numpy数组的dtype等价
+
+    Attributes
+    ----------
+    data : ndarray
+        核心数据，为NumPy数组;
+    requires_grad : bool
+        是否需要求梯度;
+    grad : ndarray
+        梯度数据，为和data相同形状的数组(初始化为全0);
+    retain_grad : bool
+        是否保留梯度，和PyTorch一样，如果retain_grad为False(默认),
+        节点的梯度不再被需要时就会释放;
+    next : list[Tensor]
+        下游节点列表；
+    last : list[Tensor]
+        上游节点列表.
+
+    Example
+    -------
+    ```python
+    import numpy as np
+    from tensor import Tensor
+
+    x = Tensor(1., requires_grad=True)
+    y = Tensor([1, 2, 3], dtype=float)
+    z = Tensor(np.random.rand(3, 4))
+    ```
+    '''
+    def __init__(self, data, requires_grad: bool = False, dtype=None) -> None:
+        if isinstance(data, Tensor):
+            data = data.data
+        self.data: np.ndarray = np.array(data, dtype)
         self.requires_grad: bool = requires_grad
+        assert not (
+            self.requires_grad and self.dtype != float
+            and self.dtype != complex
+        ), "Only Tensors of floating point and complex dtype can require gradients"
         self.grad: np.ndarray = np.zeros_like(
             self.data) if self.requires_grad else None
         self.retain_grad: bool = False
@@ -50,6 +93,9 @@ class Tensor:
 
     @property
     def is_leaf(self):
+        '''
+        判断是否为叶节点:需要求导且无上游节点的节点为叶节点
+        '''
         return not self.requires_grad or len(self.last) == 0
 
     @property
@@ -60,11 +106,37 @@ class Tensor:
     def ndim(self):
         return self.data.ndim
 
+    @property
+    def dtype(self):
+        return self.data.dtype
+
+    @property
+    def size(self):
+        return self.data.size
+
+    @property
+    def T(self):
+        return self.transpose()
+
+    def astype(self, new_type):
+        '''类型转换，我们不允许可求导节点的类型转换'''
+        assert self.requires_grad
+        self.data.astype(new_type)
+
     def reshape(self, *new_shape):
         return reshape(self, new_shape)
 
     def transpose(self, *axes):
         return transpose(self, axes)
+
+    def max(self, axis=None):
+        return sum(self, axis)
+
+    def mean(self, axis=None):
+        return mean(self, axis)
+
+    def sum(self, axis=None):
+        return sum(self, axis)
 
     @property
     def T(self):
@@ -75,10 +147,10 @@ class Tensor:
         node.last.append(self)
 
     def __repr__(self) -> str:
-        data_info = float(self.data) if self.ndim == 0 else self.shape
         type_info = str(type(self))[8:-2]
-        return "<{}, {}>".format(
+        return "<{}, {}, {}>".format(
             self.data,
+            self.dtype,
             type_info[type_info.rfind(".") + 1:],
         )
 
@@ -124,23 +196,135 @@ class Tensor:
     def __neg__(self):
         return -1 * self
 
+    def __abs__(self):
+        return abs(self)
+
     def __getitem__(self, key):
         return get_slice(self, key)
 
     def __setitem__(self, key, value):
+        '''
+        重载了切片/索引赋值的操作，我们不允许self允许求导，否则将出现错误
+
+        Parameters
+        ----------
+        key : 索引，支持NumPy的数字、切片和条件索引
+        value : 值，可以是NumPy数字，也可以是数字
+
+        Example
+        -------
+        ```python
+        x = Tensor([1, 2, 3])
+        x[x <= 2] = 0 # [0, 0, 3]
+        ```
+        '''
         assert not self.requires_grad, "In-place operation is forbidden in node requires grad."
-        if type(value) != Graph.Node:
+        if isinstance(key, Tensor):
+            key = key.data
+        if not isinstance(value, Tensor):
             self.data[key] = value
         else:
             self.data[key] = value.data
 
+    def __len__(self):
+        return len(self.data)
+
+    def __iadd__(self, other):
+        assert not self.requires_grad, "In-place operation is forbidden in node requires grad."
+        if isinstance(other, Tensor):
+            other = other.data
+        self.data += other
+        return self
+
+    def __isub__(self, other):
+        assert not self.requires_grad, "In-place operation is forbidden in node requires grad."
+        if isinstance(other, Tensor):
+            other = other.data
+        self.data -= other
+        return self
+
+    def __imul__(self, other):
+        assert not self.requires_grad, "In-place operation is forbidden in node requires grad."
+        if isinstance(other, Tensor):
+            other = other.data
+        self.data *= other
+        return self
+
+    def __itruediv__(self, other):
+        assert not self.requires_grad, "In-place operation is forbidden in node requires grad."
+        if isinstance(other, Tensor):
+            other = other.data
+        self.data /= other
+        return self
+
+    def __imatmul__(self, other):
+        assert not self.requires_grad, "In-place operation is forbidden in node requires grad."
+        if isinstance(other, Tensor):
+            other = other.data
+        self.data @= other
+        return self
+
+    def __lt__(self, other):
+        if isinstance(other, Tensor):
+            other = other.data
+        return Tensor(self.data < other)
+
+    def __le__(self, other):
+        if isinstance(other, Tensor):
+            other = other.data
+        return Tensor(self.data <= other)
+
+    # 这里没有重载__eq__和__neq__是因为在RNN中这样的重载会引发问题
+    def equal(self, other):
+        if isinstance(other, Tensor):
+            other = other.data
+        return Tensor(self.data == other)
+
+    def inequal(self, other):
+        if isinstance(other, Tensor):
+            other = other.data
+        return Tensor(self.data != other)
+
+    def __gt__(self, other):
+        if isinstance(other, Tensor):
+            other = other.data
+        return Tensor(self.data > other)
+
+    def __ge__(self, other):
+        if isinstance(other, Tensor):
+            other = other.data
+        return Tensor(self.data >= other)
+
     def backward(self, retain_graph=False):
+        '''
+        以节点为输出进行反向传播
+
+        Parameters
+        ----------
+        retain_graph : bool, default=False
+            是否保留计算图
+
+        Example
+        -------
+        ```python
+        from tensor import Tensor
+        import functional as F
+
+        x = Tensor(2., requires_grad=True)
+        y = x**2 + x - 1
+        y.backward()
+        ```
+        '''
         if self not in Graph.node_list:
             print("AD failed because the node is not in graph")
             return
 
         self.grad = np.ones_like(self.data)
-        y_id = Graph.node_list.index(self)
+        for i in range(len(Graph.node_list) - 1, -1, -1):
+            if Graph.node_list[i] is self:
+                y_id = i
+                break
+
         for node in Graph.node_list[y_id::-1]:
             grad = node.grad
             for last in [l for l in node.last if l.requires_grad]:
@@ -166,10 +350,14 @@ class Tensor:
             Graph.free_graph()
 
     def zero_grad(self):
+        '''梯度归零'''
         self.grad = np.zeros(self.shape)
 
 
 class UnaryOperator(Tensor):
+    '''
+    一元运算算子的基类，将一个一元函数抽象成类
+    '''
     def __init__(self, x: Tensor) -> None:
         if not isinstance(x, Tensor):
             x = Tensor(x)
@@ -180,16 +368,23 @@ class UnaryOperator(Tensor):
         x.build_edge(self)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        pass
-
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
         '''
-        x : 上游节点
-        grad : 下游流入该节点的梯度
+        前向传播函数，参数为Tensor，返回的是NumPy数组
+        '''
+
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
+        '''
+        x : Tensor
+            上游节点
+        grad : ndarray
+            下游流入该节点的梯度
         '''
 
 
 class BinaryOperator(Tensor):
+    '''
+    二元运算算子的基类，将一个一元函数抽象成类
+    '''
     def __init__(self, x: Tensor, y: Tensor) -> None:
         if not isinstance(x, Tensor):
             x = Tensor(x)
@@ -210,6 +405,19 @@ class BinaryOperator(Tensor):
 
 
 class add(BinaryOperator):
+    '''
+    加法算子
+
+    Example
+    -------
+    ```python
+    x = Tensor(1.)
+    y = Tensor(2.)
+    z = add(x, y)
+    # ，在Tensor类中进行了重载，所以也可以写成
+    z = x + y
+    ```
+    '''
     def forward(self, x: Tensor, y: Tensor):
         return x.data + y.data
 
@@ -218,17 +426,39 @@ class add(BinaryOperator):
 
 
 class sub(BinaryOperator):
+    '''
+    减法算子，在Tensor类中进行重载
+
+    See also
+    --------
+    add : 加法算子
+    '''
     def forward(self, x: Tensor, y: Tensor):
         return x.data - y.data
 
     def grad_fn(self, node: Tensor, grad: np.ndarray):
         grad_out = np.ones(self.shape) * grad
-        if node == self.last[0]:
+        if node is self.last[0]:
             return grad_out
         return -grad_out
 
 
 class mul(BinaryOperator):
+    '''
+    元素级乘法算子，在Tensor类中进行重载
+
+    Example
+    -------
+    ```python
+    x = Tensor([1., 2.])
+    y = Tensor([2., 3.])
+    z = mul(x, y) # [2, 6]
+    ```
+
+    See also
+    --------
+    add : 加法算子
+    '''
     def __init__(self, x: Tensor, y: Tensor) -> None:
         super().__init__(x, y)
 
@@ -236,12 +466,19 @@ class mul(BinaryOperator):
         return x.data * y.data
 
     def grad_fn(self, node: Tensor, grad: np.ndarray):
-        if node == self.last[0]:
+        if node is self.last[0]:
             return self.last[1].data * grad
         return self.last[0].data * grad
 
 
 class div(BinaryOperator):
+    '''
+    除法算子，在Tensor类中进行重载
+
+    See also
+    --------
+    add : 加法算子
+    '''
     def __init__(self, x: Tensor, y: Tensor) -> None:
         super().__init__(x, y)
 
@@ -250,12 +487,19 @@ class div(BinaryOperator):
 
     def grad_fn(self, node: Tensor, grad: np.ndarray):
         temp = grad / self.last[1].data
-        if node == self.last[0]:
+        if node is self.last[0]:
             return temp
         return -self.data * temp
 
 
 class pow(BinaryOperator):
+    '''
+    幂运算算子，在Tensor类中进行重载
+
+    See also
+    --------
+    add : 加法算子
+    '''
     def __init__(self, x: Tensor, y: Tensor) -> None:
         super().__init__(x, y)
 
@@ -263,13 +507,24 @@ class pow(BinaryOperator):
         return x.data**y.data
 
     def grad_fn(self, node: Tensor, grad) -> np.ndarray:
-        if node == self.last[0]:
+        if node is self.last[0]:
             return (self.data * self.last[1].data / node.data) * grad
         else:
             return self.data * np.log(self.last[0].data) * grad
 
 
 class matmul(BinaryOperator):
+    '''
+    矩阵乘法算子，在Tensor类中进行重载，张量的矩阵乘法遵从NumPy Matmul的规则.
+
+    Reference
+    ---------
+    https://welts.xyz/2022/04/26/broadcast/
+
+    See also
+    --------
+    add : 加法算子
+    '''
     def __init__(self, x: Tensor, y: Tensor) -> None:
         super().__init__(x, y)
 
@@ -277,12 +532,7 @@ class matmul(BinaryOperator):
         return x.data @ y.data
 
     def grad_fn(self, node: Tensor, grad) -> np.ndarray:
-        # x, y = self.last[0].data[...], self.last[1].data[...]
-        # if x.ndim == 1:
-        #     x = np.expand_dims(x, axis=0)
-        # if y.ndim == 1:
-        #     y = np.expand_dims(y, axis=1)
-        if node == self.last[0]:
+        if node is self.last[0]:
             if self.last[1].ndim == 1:
                 return np.expand_dims(grad, -1) @ np.expand_dims(
                     self.last[1].data, -2)
@@ -302,8 +552,133 @@ class matmul(BinaryOperator):
             return self.last[0].data.T @ grad
 
 
+class abs(UnaryOperator):
+    '''
+    绝对值算子，在Tensor类中进行重载
+
+    See also
+    --------
+    add : 加法算子
+    '''
+    def forward(self, x: Tensor) -> np.ndarray:
+        return np.abs(x)
+
+    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+        mask = np.zeros(x.shape)
+        mask[x > 0] = 1.
+        mask[x < 0] = -1.
+        return grad * mask
+
+
+class sum(UnaryOperator):
+    '''
+    求和算子，在Tensor类中扩展为类方法
+
+    Parameters
+    ----------
+    axis : None
+        求和方向(轴)
+    keepdims : bool, default=False
+        是否保留原来维度
+
+    Example
+    -------
+    ```python
+    x = Tensor(
+        [[1, 2, 3],
+        [4, 5, 6]]
+    )
+    s1 = x.sum(0) # [5, 7, 9]
+    s2 = x.sum(1) # [6, 15]
+    s3 = sum(x, keepdims=True) # [[21]]
+    ```
+    '''
+    def __init__(self, x: Tensor, axis=None, keepdims=False) -> None:
+        self.axis = axis
+        self.keepdims = keepdims
+        super().__init__(x)
+
+    def forward(self, x: Tensor) -> np.ndarray:
+        return np.sum(x.data, axis=self.axis, keepdims=self.keepdims)
+
+    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+        if not (self.axis is None or self.keepdims):
+            grad = np.expand_dims(grad, axis=self.axis)
+        return np.ones(x.shape) * grad
+
+
+class mean(UnaryOperator):
+    '''
+    求均值算子，在Tensor类中扩展为类方法
+
+    Parameters
+    ----------
+    axis : None
+        求均值方向(轴)
+    keepdims : bool, default=False
+        是否保留原来维度
+
+    See also
+    --------
+    sum : 求和算子
+    '''
+    def __init__(self, x: Tensor, axis=None, keepdims=False) -> None:
+        self.axis = axis
+        self.keepdims = keepdims
+        super().__init__(x)
+
+    def forward(self, x: Tensor) -> np.ndarray:
+        return np.mean(x.data, axis=self.axis, keepdims=self.keepdims)
+
+    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+        if not (self.axis is None or self.keepdims):
+            grad = np.expand_dims(grad, axis=self.axis)
+        return np.ones(x.shape) * grad * self.data.size / x.data.size
+
+
+class max(UnaryOperator):
+    '''
+    求最大值算子，在Tensor类中扩展为类方法
+
+    Parameters
+    ----------
+    axis : None
+        求最大值方向(轴)
+    keepdims : bool, default=False
+        是否保留原来维度
+
+    See also
+    --------
+    sum : 求和算子
+    '''
+    def __init__(self, x: Tensor, axis=None, keepdims=False) -> None:
+        self.axis = axis
+        self.keepdims = keepdims
+        super().__init__(x)
+
+    def forward(self, x: Tensor) -> np.ndarray:
+        return np.max(x.data, axis=self.axis, keepdims=self.keepdims)
+
+    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+        if self.keepdims:
+            full_dim_y = self.data
+        else:
+            # 还原维度
+            full_dim_y = np.expand_dims(self.data, axis=self.axis)
+            grad = np.expand_dims(grad, axis=self.axis)
+        return (full_dim_y == x.data).astype(float) * grad
+
+
 # 非计算函数
 class reshape(UnaryOperator):
+    '''
+    张量形状变换算子，在Tensor中进行重载
+
+    Parameters
+    ----------
+    new_shape : tuple
+        变换后的形状，用法同NumPy
+    '''
     def __init__(self, x: Tensor, new_shape: tuple) -> None:
         self.new_shape = new_shape
         super().__init__(x)
@@ -316,6 +691,14 @@ class reshape(UnaryOperator):
 
 
 class transpose(UnaryOperator):
+    '''
+    张量转置算子，在Tensor中进行重载(Tensor.T和Tensor.transpose)
+
+    Parameters
+    ----------
+    axes : tuple
+        转置的轴变换，用法同NumPy
+    '''
     def __init__(self, x: Tensor, axes: tuple = None) -> None:
         self.axes = axes
         super().__init__(x)
@@ -330,8 +713,28 @@ class transpose(UnaryOperator):
 
 
 class get_slice(UnaryOperator):
+    '''
+    切片算子，为Tensor类提供索引和切片接口
+
+    Example
+    -------
+    ```python
+    x = Tensor(
+        np.arange(12).reshape(3, 4).astype(float),
+        requires_grad=True,
+    )
+    y = x[:2, :2].sum()
+    y.backward()
+    print(x.grad) # [[1. 1. 0. 0.]
+                  #  [1. 1. 0. 0.]
+                  #  [0. 0. 0. 0.]]
+    ```
+    '''
     def __init__(self, x: Tensor, key) -> None:
-        self.key = key
+        if isinstance(key, Tensor):
+            self.key = key.data
+        else:
+            self.key = key
         super().__init__(x)
 
     def forward(self, x: Tensor) -> np.ndarray:
@@ -343,6 +746,7 @@ class get_slice(UnaryOperator):
         return full_grad
 
 
+# 一些包装的特殊矩阵
 def zeros(shape, requires_grad=False):
     return Tensor(np.zeros(shape), requires_grad=requires_grad)
 

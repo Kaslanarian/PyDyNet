@@ -7,6 +7,10 @@ sub = tensor.sub
 mul = tensor.mul
 div = tensor.div
 matmul = tensor.matmul
+abs = tensor.abs
+sum = tensor.sum
+mean = tensor.mean
+max = tensor.max
 reshape = tensor.reshape
 transpose = tensor.transpose
 
@@ -72,71 +76,12 @@ class leaky_relu(UnaryOperator):
         return dlrelu * grad
 
 
-class sum(UnaryOperator):
-    def __init__(self, x: Tensor, axis=None, keepdims=False) -> None:
-        self.axis = axis
-        self.keepdims = keepdims
-        super().__init__(x)
-
-    def forward(self, x: Tensor) -> np.ndarray:
-        return np.sum(x.data, axis=self.axis, keepdims=self.keepdims)
-
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
-        if not (self.axis is None or self.keepdims):
-            grad = np.expand_dims(grad, axis=self.axis)
-        return np.ones(x.shape) * grad
-
-
-class mean(UnaryOperator):
-    def __init__(self, x: Tensor, axis=None, keepdims=False) -> None:
-        self.axis = axis
-        self.keepdims = keepdims
-        super().__init__(x)
-
-    def forward(self, x: Tensor) -> np.ndarray:
-        return np.mean(x.data, axis=self.axis, keepdims=self.keepdims)
-
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
-        if not (self.axis is None or self.keepdims):
-            grad = np.expand_dims(grad, axis=self.axis)
-        return np.ones(x.shape) * grad * self.data.size / x.data.size
-
-
-class max(UnaryOperator):
-    def __init__(self, x: Tensor, axis=None, keepdims=False) -> None:
-        self.axis = axis
-        self.keepdims = keepdims
-        super().__init__(x)
-
-    def forward(self, x: Tensor) -> np.ndarray:
-        return np.max(x.data, axis=self.axis, keepdims=self.keepdims)
-
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
-        if self.keepdims:
-            full_dim_y = self.data
-        else:
-            # 还原维度
-            full_dim_y = np.expand_dims(self.data, axis=self.axis)
-            grad = np.expand_dims(grad, axis=self.axis)
-        return (full_dim_y == x.data).astype(float) * grad
-
-
 def sqrt(x: Tensor):
     return x**0.5
 
 
 def square(x: Tensor):
     return x * x
-
-
-def simple_sigmoid(x: Tensor):
-    return 1 / (1 + exp(-x))
-
-
-def simple_tanh(x: Tensor):
-    exp_ = exp(x)
-    inv_exp = 1 / exp(x)
-    return (exp_ - inv_exp) / (exp_ + inv_exp)
 
 
 def softmax(x: Tensor, axis=None):

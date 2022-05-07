@@ -17,20 +17,25 @@ class Layer:
 class Linear(Layer):
     def __init__(
         self,
-        n_input,
-        n_output,
+        in_features,
+        out_features,
     ) -> None:
         super().__init__()
-        self.n_input = n_input
-        self.n_output = n_output
-        scale = 1 / self.n_input**0.5
+        self.in_features = in_features
+        self.out_features = out_features
+        scale = 1 / self.in_features**0.5
         self.weight = uniform(
             -scale,
             scale,
-            (self.n_input, self.n_output),
+            (self.in_features, self.out_features),
             requires_grad=True,
         )
-        self.bias = uniform(-scale, scale, self.n_output, requires_grad=True)
+        self.bias = uniform(
+            -scale,
+            scale,
+            self.out_features,
+            requires_grad=True,
+        )
 
     def forward(self, x):
         return x @ self.weight + self.bias
@@ -75,10 +80,10 @@ class BatchNorm(Layer):
             var = F.mean(F.square(center_data), 0)
             std_data = center_data / F.sqrt(var)
 
-            self.running_mean.data *= self.gamma
-            self.running_mean.data += (1 - self.gamma) * mean.data
-            self.running_var.data *= self.gamma
-            self.running_var.data += (1 - self.gamma) * var.data
+            self.running_mean *= self.gamma
+            self.running_mean += (1 - self.gamma) * mean
+            self.running_var *= self.gamma
+            self.running_var += (1 - self.gamma) * var
 
             return std_data * self.scale + self.shift
         else:
@@ -320,11 +325,10 @@ class LSTM(RNN):
         if h is None:
             h = zeros(self.hidden_size)
 
-        for i in range(self.num_layers):
-            self.c[i] = Tensor(self.c[i].data)
-
+        self.c[0] = Tensor(self.c[0].data)
         h = self.forward_one_layer(0, x, h)
         for i in range(1, self.num_layers):
+            self.c[i] = Tensor(self.c[i].data)
             h = self.forward_one_layer(i, h, None)
 
         return h

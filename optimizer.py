@@ -14,7 +14,7 @@ class SGD:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = np.zeros_like(param.grad)
+            param.zero_grad()
 
 
 class Momentum(SGD):
