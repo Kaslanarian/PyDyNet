@@ -4,7 +4,28 @@
 
 ## Overview
 
-PyDyNet也是纯NumPy实现的神经网络，语法受PyTorch的启发，我们实现了：
+PyDyNet也是纯NumPy实现的神经网络，语法受PyTorch的启发，大致结构如下：
+
+```mermaid
+graph BT
+	N ----> Data(DataLoader)
+	N(numpy.ndarray) --> A(Tensor)
+	A --Eager execution--> B(Basic operators: add, exp, etc)
+	B --> E(Mechanism: Dropout, BN, etc)
+	E --> D
+	B --> C(Complex operators: softmax, etc)
+	C --> E
+	B --> D(Layer:Linear, Conv2d, etc)
+	C --> D
+	B --Autograd--> A
+	N ----> GD(Optimizer:SGD, Adam, etc)
+	D --> M(Module:DNN, CNN, RNN, etc)
+	M --> Mission(Classification, Regresion, etc)
+	Data --> Mission
+	GD --> Mission
+```
+
+我们实现了：
 
 1. 将NumPy数组包装成具有梯度等信息的张量(Tensor):
 
@@ -16,7 +37,7 @@ PyDyNet也是纯NumPy实现的神经网络，语法受PyTorch的启发，我们�
    print(x.ndim, x.shape, x.is_leaf) # 0, (), True
    ```
 
-2. 将NumPy数组的计算(包括数学运算、切片、形状变换等)抽象成基础算子，并对部分运算加以重载：
+2. 将NumPy数组的计算(包括数学运算、切片、形状变换等)抽象成基础算子(Basic operators)，并对部分运算加以重载：
 
    ```python
    from tensor import Tensor
@@ -28,7 +49,7 @@ PyDyNet也是纯NumPy实现的神经网络，语法受PyTorch的启发，我们�
    print(z.data) # 36.192...
    ```
 
-3. 手动编写基础算子的梯度，实现和PyTorch相同的动态图自动微分机制，从而实现反向传播
+3. 手动编写基础算子的梯度，实现和PyTorch相同的动态图自动微分机制(Autograd)，从而实现反向传播
 
    ```python
    from tensor import Tensor
@@ -42,7 +63,7 @@ PyDyNet也是纯NumPy实现的神经网络，语法受PyTorch的启发，我们�
    print(x.grad) # [2., 1.5, 1.33333333]
    ```
 
-4. 基于基础算子实现更高级的算子，它们不再需要手动编写导数：
+4. 基于基础算子实现更高级的算子(Complex operators)，它们不再需要手动编写导数：
 
    ```python
    def simple_sigmoid(x: Tensor):
