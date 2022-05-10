@@ -435,6 +435,24 @@ class GRU(RNN):
         return self.forward(x, h)
 
 
+class Embedding(Layer):
+    def __init__(self,
+                 num_embeddings,
+                 embedding_dim,
+                 padding_idx=None) -> None:
+        super().__init__()
+        self.num_embeddings = num_embeddings
+        self.embedding_dim = embedding_dim
+        weight = np.random.randn(self.num_embeddings, self.embedding_dim)
+        if padding_idx != None:
+            weight[padding_idx] = 0.
+
+        self.weight = Tensor(weight, requires_grad=True)
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.weight[x]
+
+
 class Module:
     def __init__(self) -> None:
         pass
@@ -464,18 +482,40 @@ class Module:
                 member.train = False
 
 
-class MSELoss:
+class MSELoss(Layer):
+    def __init__(self, reduction='mean') -> None:
+        super().__init__()
+        self.reduction = reduction
+        assert self.reduction in {'mean', 'sum'}
+
+    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
+        return F.mse_loss(y_pred, y_true, reduction=self.reduction)
+
     def __call__(self, y_pred, y_true):
-        return F.mean(F.square(y_pred - y_true))
+        return self.forward(y_pred, y_true)
 
 
-class NLLLoss:
+class NLLLoss(Layer):
+    def __init__(self, reduction='mean') -> None:
+        super().__init__()
+        self.reduction = reduction
+        assert self.reduction in {'mean', 'sum'}
+
+    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
+        return F.nll_loss(y_pred, y_true, reduction=self.reduction)
+
     def __call__(self, y_pred, y_true):
-        return -F.mean(F.log(y_pred) * y_true)
+        return self.forward(y_pred, y_true)
 
 
-class CrossEntropyLoss:
+class CrossEntropyLoss(Layer):
+    def __init__(self, reduction='mean') -> None:
+        super().__init__()
+        self.reduction = reduction
+        assert self.reduction in {'mean', 'sum'}
+
+    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
+        return F.cross_entropy_loss(y_pred, y_true, reduction=self.reduction)
+
     def __call__(self, y_pred, y_true):
-        update_y_pred = y_pred - np.max(y_pred.data)
-        log_sum_exp = F.log(F.sum(F.exp(update_y_pred), 1, keepdims=True))
-        return -F.mean((update_y_pred - log_sum_exp) * y_true)
+        return self.forward(y_pred, y_true)

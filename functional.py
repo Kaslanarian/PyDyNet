@@ -84,10 +84,15 @@ def square(x: Tensor):
     return x * x
 
 
-def softmax(x: Tensor, axis=None):
+def softmax(x: Tensor, axis=None, keepdims=False):
     x_sub_max = x - Tensor(np.ones(x.shape) * np.max(x.data))
     exp_ = exp(x_sub_max)
-    return exp_ / sum(exp_, axis=axis)
+    return exp_ / sum(exp_, axis=axis, keepdims=keepdims)
+
+
+def log_softmax(x: Tensor, axis=None, keepdims=False):
+    x_sub_max = x - Tensor(np.ones(x.shape) * np.max(x.data))
+    return x_sub_max - log(sum(exp(x_sub_max), axis=axis, keepdims=keepdims))
 
 
 # 卷积相关
@@ -268,3 +273,35 @@ class concatenate(Tensor):
         slc = [slice(None)] * len(grad.shape)
         slc[self.axis] = slice(start, end)
         return grad[tuple(slc)]
+
+
+def mse_loss(y_pred, y_true, reduction='mean'):
+    square_sum = square(y_pred - y_true)
+    if reduction == 'mean':
+        return mean(square_sum)
+    elif reduction == 'sum':
+        return sum(square_sum)
+    else:
+        assert 0, "reduction must be mean or sum."
+
+
+def nll_loss(y_pred, y_true, reduction='mean'):
+    nll = -y_pred * y_true
+    if reduction == 'mean':
+        return mean(nll)
+    elif reduction == 'sum':
+        return sum(nll)
+    else:
+        assert 0, "reduction must be mean or sum."
+
+
+def cross_entropy_loss(y_pred, y_true, reduction='mean'):
+    update_y_pred = y_pred - np.max(y_pred.data)
+    log_sum_exp = log(sum(exp(update_y_pred), 1, keepdims=True))
+    nll = -(update_y_pred - log_sum_exp) * y_true
+    if reduction == 'mean':
+        return mean(nll)
+    elif reduction == 'sum':
+        return sum(nll)
+    else:
+        assert 0, "reduction must be mean or sum."
