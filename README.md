@@ -15,12 +15,12 @@ graph BT
 	E --> D
 	B --> C(Complex operators: softmax, etc)
 	C --> E
-	B --> D(Layer:Linear, Conv2d, etc)
+	B --> D(Base Module:Linear, Conv2d, etc)
 	C --> D
 	B --Autograd--> A
 	N ----> GD(Optimizer:SGD, Adam, etc)
 	D --> M(Module:DNN, CNN, RNN, etc)
-	M --> Mission(Classification, Regresion, etc)
+	M --> Mission(PyDyNet)
 	Data --> Mission
 	GD --> Mission
 ```
@@ -70,7 +70,7 @@ graph BT
        return 1 / (1 + exp(-x))
    ```
 
-5. 实现了Mudule、各种Layer和损失函数，从而我们可以像下面这样定义神经网络，损失函数项：
+5. 实现了Mudule，包括激活函数，损失函数等，从而我们可以像下面这样定义神经网络，损失函数项：
 
    ```python
    import nn
@@ -100,7 +100,7 @@ graph BT
 6. 实现了多种优化器(`optimizer.py`)，以及数据分批的接口(`dataloader.py`)，从而实现神经网络的训练；其中优化器和PyTorch一样支持权值衰减，即正则化；
 7. Dropout机制，Batch Normalization机制，以及将网络划分成训练阶段和评估阶段；
 8. 基于im2col高效实现Conv1d, Conv2d, max_pool1d和max_pool2d，从而实现CNN；
-9. 支持多层的单向RNN，LSTM和GRU。
+9. 支持多层的**双向**RNN，LSTM和GRU。
 
 ## Example
 
@@ -166,8 +166,8 @@ examples中是一些例子。
 
 ## RNN
 
-[RNN.py](examples/RNN.py)中是一个用GRU对`sklearn`的数字图片数据集进行分类，由于不是时序数据，效果一般：
+[RNN.py](examples/RNN.py)中是一个用双向单层GRU对`sklearn`的数字图片数据集进行分类：
 
 <img src="src/RNN.png" alt="RNN" style="zoom:67%;" />
 
-目前RNN部分的模块还在开发中，包括扩展到双向，引入Attention机制等。
+目前RNN部分的模块还在开发中，包括扩展到双向（已完成），引入Attention机制等。

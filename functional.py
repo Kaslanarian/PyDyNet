@@ -62,7 +62,7 @@ class relu(UnaryOperator):
 
 
 class leaky_relu(UnaryOperator):
-    def __init__(self, x: Tensor, alpha: float = 0.1) -> None:
+    def __init__(self, x: Tensor, alpha: float) -> None:
         self.alpha = alpha
         super().__init__(x)
 

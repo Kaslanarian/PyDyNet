@@ -55,7 +55,7 @@ class CNN1d(nn.Module):
         x = self.conv1(x)
         x = F.max_pool1d(x, 12, 12)
         x = x.reshape(x.shape[0], -1)
-        x = F.leaky_relu(self.fc1(x))
+        x = F.leaky_relu(self.fc1(x), 0.1)
         return self.fc2(x)
 
 
@@ -71,7 +71,7 @@ class CNN2d(nn.Module):
         x = F.max_pool2d(x, 4, 4)
         x = x.reshape(x.shape[0], -1)
         x = self.fc1(x)
-        x = F.leaky_relu(x)
+        x = F.leaky_relu(x, 0.1)
         return self.fc2(x)
 
 

@@ -1,80 +1,121 @@
-from tensor import Tensor, Graph, zeros, randn, uniform
+from collections import OrderedDict
+from tensor import Tensor, zeros, randn, uniform
 import functional as F
 import numpy as np
 
 
-class Layer:
-    def forward(self, x: Tensor) -> Tensor:
-        return
+class Parameter(Tensor):
+    def __init__(self, data: Tensor) -> None:
+        super().__init__(data.data, True, float)
 
-    def __call__(self, x: Tensor) -> Tensor:
-        return self.forward(x)
+    def __repr__(self) -> str:
+        return "Parameter : {}".format(self.data)
+
+
+class Module:
+    def __init__(self) -> None:
+        self._train = True
+        self._parameters = OrderedDict()
+
+    def forward(self, x) -> Tensor:
+        pass
+
+    def __call__(self, *x) -> Tensor:
+        return self.forward(*x)
+
+    def __setattr__(self, __name: str, __value) -> None:
+        self.__dict__[__name] = __value
+        if isinstance(__value, Parameter):
+            self._parameters[__name] = __value
+        if isinstance(__value, Module):
+            for key in __value._parameters:
+                self._parameters[__name + "." + key] = __value._parameters[key]
+
+    def __repr__(self) -> str:
+        module_list = [
+            module for module in self.__dict__.items()
+            if isinstance(module[1], Module)
+        ]
+        return "{}(\n{}\n)".format(
+            self.__class__.__name__,
+            "\n".join([
+                "{:>10} : {}".format(module_name, module)
+                for module_name, module in module_list
+            ]),
+        )
 
     def parameters(self):
-        return []
+        return tuple(self._parameters.values())
+
+    def train(self):
+        self._train = True
+        for module in self.__dict__.values():
+            if isinstance(module, Module):
+                module.train()
+
+    def eval(self):
+        self._train = False
+        for module in self.__dict__.values():
+            if isinstance(module, Module):
+                module.eval()
 
 
-class Linear(Layer):
-    def __init__(
-        self,
-        in_features,
-        out_features,
-    ) -> None:
+class Linear(Module):
+    def __init__(self, in_features, out_features, bias=True) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         scale = 1 / self.in_features**0.5
-        self.weight = uniform(
-            -scale,
-            scale,
-            (self.in_features, self.out_features),
-            requires_grad=True,
-        )
-        self.bias = uniform(
+        self.weight = Parameter(
+            uniform(
+                -scale,
+                scale,
+                (self.in_features, self.out_features),
+            ))
+        self.bias = Parameter(uniform(
             -scale,
             scale,
             self.out_features,
-            requires_grad=True,
-        )
+        )) if bias else None
 
     def forward(self, x):
-        return x @ self.weight + self.bias
+        affine = x @ self.weight
+        if self.bias is not None:
+            return affine + self.bias
+        return affine
 
-    def parameters(self):
-        return [self.weight, self.bias]
+    def __repr__(self) -> str:
+        return "Linear(in_features={}, out_features={}, bias={})".format(
+            self.in_features, self.out_features, self.bias is not None)
 
 
-class Softmax(Layer):
-    def forward(self, x):
-        return F.softmax(x, axis=-1)
-
-
-class Dropout(Layer):
+class Dropout(Module):
     def __init__(self, p: float = 0.5) -> None:
         super().__init__()
         assert p >= 0 and p < 1
         self.p = p
-        self.train = True
 
     def forward(self, x) -> Tensor:
-        if self.train:
+        if self._train:
             return x * Tensor(np.random.binomial(1, 1 - self.p, x.shape[-1]))
         return x * (1 - self.p)
 
+    def __repr__(self) -> str:
+        return "{}(p={})".format(self.__class__.__name__, self.p)
 
-class BatchNorm(Layer):
+
+class BatchNorm(Module):
     def __init__(self, input_size: int, gamma: float = 0.99) -> None:
         super().__init__()
         self.input_size = input_size
         self.gamma = gamma
-        self.train = True
         self.running_mean = zeros(self.input_size)
         self.running_var = zeros(self.input_size)
-        self.scale = randn(self.input_size, requires_grad=True)
-        self.shift = zeros(self.input_size, requires_grad=True)
+        self.scale = Parameter(randn(self.input_size))
+        self.shift = Parameter(zeros(self.input_size))
 
     def forward(self, x):
-        if self.train:
+        if self._train:
             mean = F.mean(x, 0)
             center_data = x - mean
             var = F.mean(F.square(center_data), 0)
@@ -90,17 +131,22 @@ class BatchNorm(Layer):
             return (x - self.running_mean) * self.scale / F.sqrt(
                 self.running_var) + self.shift
 
-    def parameters(self):
-        return [self.scale, self.shift]
+    def __repr__(self) -> str:
+        return "{}(input_size={}, gamma={})".format(
+            self.__class__.__name__,
+            self.input_size,
+            self.gamma,
+        )
 
 
-class Conv1d(Layer):
+class Conv1d(Module):
     def __init__(self,
                  in_channels,
                  out_channels,
                  kernel_size,
                  stride=1,
-                 padding=0) -> None:
+                 padding=0,
+                 bias=True) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -108,27 +154,37 @@ class Conv1d(Layer):
         self.padding = padding
         self.stride = stride
         scale = 1 / (self.in_channels * self.kernel_size)**0.5
-        self.kernel = uniform(
-            -scale,
-            scale,
-            (self.out_channels, self.in_channels, self.kernel_size),
-            requires_grad=True,
-        )
-        self.bias = uniform(
+        self.kernel = Parameter(
+            uniform(
+                -scale,
+                scale,
+                (self.out_channels, self.in_channels, self.kernel_size),
+            ))
+        self.bias = Parameter(uniform(
             -scale,
             scale,
             self.out_channels,
-            requires_grad=True,
-        )
+        )) if bias else None
 
     def forward(self, x):
-        return F.conv1d(x, self.kernel, self.padding, self.stride) + self.bias
+        conv1d = F.conv1d(x, self.kernel, self.padding, self.stride)
+        if self.bias is not None:
+            return conv1d + self.bias
+        return conv1d
 
-    def parameters(self):
-        return [self.kernel, self.bias]
+    def __repr__(self) -> str:
+        return "{}(in_channels={}, out_channels={}, kernel_size={}, padding={}, stride={}, bias={})".format(
+            self.__class__.__name__,
+            self.in_channels,
+            self.out_channels,
+            self.kernel_size,
+            self.padding,
+            self.stride,
+            self.bias is not None,
+        )
 
 
-class Conv2d(Layer):
+class Conv2d(Module):
     def __init__(
         self,
         in_channels,
@@ -136,6 +192,7 @@ class Conv2d(Layer):
         kernel_size,
         padding=0,
         stride=1,
+        bias=True,
     ) -> None:
         super().__init__()
         self.in_channels = in_channels
@@ -144,345 +201,108 @@ class Conv2d(Layer):
         self.padding = padding
         self.stride = stride
         scale = 1 / (self.in_channels * self.kernel_size**2)**0.5
-        self.kernel = uniform(
+        self.kernel = Parameter(
+            uniform(
+                -scale,
+                scale,
+                (self.out_channels, self.in_channels, self.kernel_size,
+                 self.kernel_size),
+            ))
+        self.bias = Parameter(uniform(
             -scale,
             scale,
-            (self.out_channels, self.in_channels, self.kernel_size,
-             self.kernel_size),
-            requires_grad=True,
-        )
-        self.bias = uniform(-scale,
-                            scale,
-                            self.out_channels,
-                            requires_grad=True)
+            self.out_channels,
+        )) if bias else None
 
     def forward(self, x):
-        return F.conv2d(x, self.kernel, self.padding, self.stride) + self.bias
+        conv2d = F.conv2d(x, self.kernel, self.padding, self.stride)
+        if self.bias is not None:
+            return conv2d + self.bias
+        return conv2d
 
-    def parameters(self):
-        return [self.kernel, self.bias]
-
-
-class RNN(Layer):
-    def __init__(
-        self,
-        input_size,
-        hidden_size,
-        num_layers=1,
-        nonlinearity='tanh',
-        batch_first=False,
-    ) -> None:
-        super().__init__()
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.batch_first = batch_first
-        self.num_layers = num_layers
-        self.fn = {
-            "tanh": F.tanh,
-            "relu": F.relu,
-        }[nonlinearity]
-        scale = 1 / self.hidden_size**0.5
-        self.Wxs = [
-            uniform(
-                -scale,
-                scale,
-                (self.input_size, self.hidden_size),
-                requires_grad=True,
-            )
-        ] + [
-            uniform(
-                -scale,
-                scale,
-                (self.hidden_size, self.hidden_size),
-                requires_grad=True,
-            ) for i in range(self.num_layers - 1)
-        ]
-        self.Whs = [
-            uniform(
-                -scale,
-                scale,
-                (self.hidden_size, self.hidden_size),
-                requires_grad=True,
-            ) for i in range(self.num_layers)
-        ]
-        self.biases = [
-            uniform(-scale, scale, self.hidden_size, requires_grad=True)
-            for i in range(self.num_layers)
-        ]
-
-    def forward_one_layer(self, layer, x, h):
-        h_list = []
-        if h is None:
-            h = zeros(self.hidden_size)
-
-        if self.batch_first:
-            for i in range(x.shape[1]):
-                h = self.fn(x[..., i:i + 1, :] @ self.Wxs[layer] +
-                            h @ self.Whs[layer] + self.biases[layer])
-                h_list.append(h)
-            return F.concatenate(*h_list, axis=1)
-        else:
-            for i in range(x.shape[0]):
-                h = self.fn(x[i:i + 1] @ self.Wxs[layer] +
-                            h @ self.Whs[layer] + self.biases[layer])
-                h_list.append(h)
-            return F.concatenate(*h_list)
-
-    def forward(self, x: Tensor, h=None):
-        '''
-        if batch_first:
-            x.shape : (batch, seq_len, input_size)
-            h.shape : (batch, seq_len, hidden_size)
-        else:
-            x.shape : (seq_len, batch, input_size)
-            h.shape : (seq_len, batch, hidden_size)
-        '''
-        if h is None:
-            h = zeros(self.hidden_size)
-        h = self.forward_one_layer(0, x, h)
-        for i in range(1, self.num_layers):
-            h = self.forward_one_layer(i, h, None)
-
-        return h
-
-    def parameters(self):
-        return self.Wxs + self.Whs + self.biases
-
-    def __call__(self, x: Tensor, h=None) -> Tensor:
-        return self.forward(x, h)
-
-
-class LSTM(RNN):
-    def __init__(self,
-                 input_size,
-                 hidden_size,
-                 num_layers=1,
-                 batch_first=False) -> None:
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.batch_first = batch_first
-        self.num_layers = num_layers
-        scale = 1 / self.hidden_size**0.5
-
-        self.Wxs = [
-            uniform(-scale,
-                    scale, (self.input_size, 4 * self.hidden_size),
-                    requires_grad=True)
-        ] + [
-            uniform(
-                -scale,
-                scale,
-                (self.hidden_size, 4 * self.hidden_size),
-                requires_grad=True,
-            ) for i in range(self.num_layers - 1)
-        ]
-        self.Whs = [
-            uniform(
-                -scale,
-                scale,
-                (self.hidden_size, 4 * self.hidden_size),
-                requires_grad=True,
-            ) for i in range(self.num_layers)
-        ]
-        self.biases = [
-            uniform(-scale, scale, 4 * self.hidden_size, requires_grad=True)
-            for i in range(self.num_layers)
-        ]
-        self.c = [zeros(hidden_size) for i in range(self.num_layers)]
-
-    def forward_one_layer(self, layer, x, h):
-        h_list = []
-        if h is None:
-            h = zeros(self.hidden_size)
-
-        if self.batch_first:
-            for i in range(x.shape[1]):
-                h = self.forward_one_step(layer, x[..., i:i + 1, :], h)
-                h_list.append(h)
-            return F.concatenate(*h_list, axis=1)
-        else:
-            for i in range(x.shape[0]):
-                h = self.forward_one_step(layer, x[i:i + 1], h)
-                h_list.append(h)
-            return F.concatenate(*h_list)
-
-    def forward_one_step(self, layer, x: Tensor, h: Tensor):
-        affine = x @ self.Wxs[layer] + h @ self.Whs[layer] + self.biases[
-            layer]  # 4 * hidden_size
-        f_i_o, g = affine[..., :3 *
-                          self.hidden_size], affine[..., -self.hidden_size:]
-        sigma_fio = F.sigmoid(f_i_o)
-        g = F.tanh(g)
-        f, i, o = (
-            sigma_fio[..., :self.hidden_size],
-            sigma_fio[..., self.hidden_size:2 * self.hidden_size],
-            sigma_fio[..., 2 * self.hidden_size:],
+    def __repr__(self) -> str:
+        return "{}(in_channels={}, out_channels={}, kernel_size={}, padding={}, stride={}, bias={})".format(
+            self.__class__.__name__,
+            self.in_channels,
+            self.out_channels,
+            self.kernel_size,
+            self.padding,
+            self.stride,
+            self.bias is not None,
         )
-        self.c[layer] = F.mean(f * self.c[layer] + g * i, (0, 1))
-        return o * F.tanh(self.c[layer])
-
-    def forward(self, x: Tensor, h=None):
-        if h is None:
-            h = zeros(self.hidden_size)
-
-        self.c[0] = Tensor(self.c[0].data)
-        h = self.forward_one_layer(0, x, h)
-        for i in range(1, self.num_layers):
-            self.c[i] = Tensor(self.c[i].data)
-            h = self.forward_one_layer(i, h, None)
-
-        return h
-
-    def parameters(self):
-        return self.Wxs + self.Whs + self.biases
-
-    def __call__(self, x: Tensor, h=None) -> Tensor:
-        return self.forward(x, h)
 
 
-class GRU(RNN):
-    def __init__(
-        self,
-        input_size,
-        hidden_size,
-        num_layers=1,
-        batch_first=False,
-    ) -> None:
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.batch_first = batch_first
-        scale = 1 / self.hidden_size**0.5
-        low_high = (scale, -scale)
-        self.Wxs = [
-            uniform(
-                *low_high,
-                (self.input_size, 3 * self.hidden_size),
-                requires_grad=True,
-            )
-        ] + [
-            uniform(
-                *low_high,
-                (self.hidden_size, 3 * self.hidden_size),
-                requires_grad=True,
-            ) for i in range(self.num_layers - 1)
-        ]
-        self.Wh_zrs = [
-            uniform(
-                *low_high,
-                (self.hidden_size, 2 * self.hidden_size),
-                requires_grad=True,
-            ) for i in range(self.num_layers)
-        ]
-        self.biases_zr = [
-            uniform(
-                *low_high,
-                2 * self.hidden_size,
-                requires_grad=True,
-            ) for i in range(self.num_layers)
-        ]
-        self.Whs = [
-            uniform(
-                *low_high,
-                (self.hidden_size, self.hidden_size),
-                requires_grad=True,
-            ) for i in range(self.num_layers)
-        ]
-        self.biases = [
-            uniform(*low_high, self.hidden_size, requires_grad=True)
-            for i in range(self.num_layers)
-        ]
-
-    def forward_one_step(self, layer, x: Tensor, h: Tensor):
-        affine = x @ self.Wxs[layer]
-        zr = F.sigmoid(affine[..., :2 * self.hidden_size] +
-                       h @ self.Wh_zrs[layer] + self.biases_zr[layer])
-        z, r = zr[..., :self.hidden_size], zr[..., self.hidden_size:]
-        h_tilde = F.tanh(affine[..., 2 * self.hidden_size:] +
-                         (r * h) @ self.Whs[layer] + self.biases[layer])
-        return (1 - z) * h + z * h_tilde
-
-    def forward_one_layer(self, layer, x: Tensor, h=None):
-        if h is None:
-            h = zeros(self.hidden_size)
-
-        h_list = []
-        if self.batch_first:
-            for i in range(x.shape[1]):
-                h = self.forward_one_step(layer, x[..., i:i + 1, :], h)
-                h_list.append(h)
-            return F.concatenate(*h_list, axis=1)
-        else:
-            for i in range(x.shape[0]):
-                h = self.forward_one_step(layer, x[i:i + 1], h)
-                h_list.append(h)
-            return F.concatenate(*h_list)
-
-    def forward(self, x: Tensor, h=None):
-        if h is None:
-            h = zeros(self.hidden_size)
-
-        h = self.forward_one_layer(0, x, h)
-        for i in range(1, self.num_layers):
-            h = self.forward_one_layer(i, h, None)
-
-        return h
-
-    def parameters(self):
-        return self.Wxs + self.Wh_zrs + self.biases_zr + self.Whs + self.biases
-
-    def __call__(self, x: Tensor, h=None) -> Tensor:
-        return self.forward(x, h)
-
-
-class Embedding(Layer):
-    def __init__(self,
-                 num_embeddings,
-                 embedding_dim,
-                 padding_idx=None) -> None:
+class MaxPool1d(Module):
+    def __init__(self, kernel_size, stride, padding) -> None:
         super().__init__()
-        self.num_embeddings = num_embeddings
-        self.embedding_dim = embedding_dim
-        weight = np.random.randn(self.num_embeddings, self.embedding_dim)
-        if padding_idx != None:
-            weight[padding_idx] = 0.
-
-        self.weight = Tensor(weight, requires_grad=True)
-
-    def forward(self, x: Tensor) -> Tensor:
-        return self.weight[x]
-
-
-class Module:
-    def __init__(self) -> None:
-        pass
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
 
     def forward(self, x):
-        pass
+        return F.max_pool1d(x, self.kernel_size, self.stride, self.padding)
 
-    def __call__(self, x):
-        return self.forward(x)
-
-    def parameters(self):
-        params = []
-        for member in self.__dict__.values():
-            if isinstance(member, Layer):
-                params.extend(member.parameters())
-        return params
-
-    def train(self):
-        for member in self.__dict__.values():
-            if type(member) in {Dropout, BatchNorm}:
-                member.train = True
-        Graph.free_graph()  # 删除测试阶段产生的计算图
-
-    def eval(self):
-        for member in self.__dict__.values():
-            if type(member) in {Dropout, BatchNorm}:
-                member.train = False
+    def __repr__(self) -> str:
+        return "{}(kernel_size={}, stride={}, padding={})".format(
+            self.__class__.__name__,
+            self.kernel_size,
+            self.stride,
+            self.padding,
+        )
 
 
-class MSELoss(Layer):
+class MaxPool2d(Module):
+    def __init__(self, kernel_size, stride, padding) -> None:
+        super().__init__()
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+
+    def forward(self, x):
+        return F.max_pool2d(x, self.kernel_size, self.stride, self.padding)
+
+    def __repr__(self) -> str:
+        return "{}(kernel_size={}, stride={}, padding={})".format(
+            self.__class__.__name__,
+            self.kernel_size,
+            self.stride,
+            self.padding,
+        )
+
+
+# 激活函数
+class Sigmoid(Module):
+    def forward(self, x):
+        return F.sigmoid(x)
+
+    def __repr__(self) -> str:
+        return "{}()".format(self.__class__.__name__)
+
+
+class Tanh(Sigmoid):
+    def forward(self, x):
+        return F.tanh(x)
+
+
+class ReLU(Sigmoid):
+    def forward(self, x):
+        return F.relu(x)
+
+
+class LeakyReLU(Module):
+    def __init__(self, alpha: float) -> None:
+        super().__init__()
+        self.alpha = alpha
+
+    def forward(self, x):
+        return F.leaky_relu(x, self.alpha)
+
+    def __repr__(self) -> str:
+        return "{}(alpha={})".format(self.__class__.__name__, self.alpha)
+
+
+# 损失函数
+class MSELoss(Module):
     def __init__(self, reduction='mean') -> None:
         super().__init__()
         self.reduction = reduction
@@ -491,31 +311,310 @@ class MSELoss(Layer):
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         return F.mse_loss(y_pred, y_true, reduction=self.reduction)
 
-    def __call__(self, y_pred, y_true):
-        return self.forward(y_pred, y_true)
 
-
-class NLLLoss(Layer):
-    def __init__(self, reduction='mean') -> None:
-        super().__init__()
-        self.reduction = reduction
-        assert self.reduction in {'mean', 'sum'}
-
+class NLLLoss(MSELoss):
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         return F.nll_loss(y_pred, y_true, reduction=self.reduction)
 
-    def __call__(self, y_pred, y_true):
-        return self.forward(y_pred, y_true)
 
-
-class CrossEntropyLoss(Layer):
-    def __init__(self, reduction='mean') -> None:
-        super().__init__()
-        self.reduction = reduction
-        assert self.reduction in {'mean', 'sum'}
-
+class CrossEntropyLoss(MSELoss):
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         return F.cross_entropy_loss(y_pred, y_true, reduction=self.reduction)
 
-    def __call__(self, y_pred, y_true):
-        return self.forward(y_pred, y_true)
+
+# RNN
+class RNN(Module):
+    '''
+    单层RNN，不像Pytorch那样可以指定num_layers进行多层堆叠，我们的RNN是单层可双向的，
+    如果要搭建多层RNN:
+
+    ```python
+    class MultiLayerRNN(Module):
+        def __init__(self):
+            super().__init__()
+            self.rnn1 = RNN(...)
+            self.rnn2 = RNN(...)
+            ...
+
+        def forward(x, h=None):
+            x = self.rnn1(x, h)
+            return self.rnn2(x)
+    ```
+    '''
+    def __init__(
+        self,
+        input_size,
+        hidden_size,
+        nonlinearity='tanh',
+        batch_first=False,
+        bidirectional=False,
+    ) -> None:
+        super().__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.batch_first = batch_first
+        self.bidirectional = bidirectional
+        self.nonlinearity = nonlinearity
+        self.fn = {
+            "tanh": F.tanh,
+            "relu": F.relu,
+        }[nonlinearity]
+        scale = 1 / self.hidden_size**0.5
+        low_high = (-scale, scale)
+
+        self.Wx = Parameter(uniform(*low_high, (input_size, hidden_size)))
+        self.Wh = Parameter(uniform(*low_high, (hidden_size, hidden_size)))
+        self.bias = Parameter(uniform(*low_high, hidden_size))
+
+        if self.bidirectional:
+            self.Wx_reverse = Parameter(
+                uniform(*low_high, (input_size, hidden_size)))
+            self.Wh_reverse = Parameter(
+                uniform(*low_high, (hidden_size, hidden_size)))
+            self.bias_reverse = Parameter(uniform(*low_high, hidden_size))
+
+    def forward(self, x: Tensor, h=(None, None)):
+        '''
+        if batch_first:
+            x.shape : (batch, seq_len, input_size)
+            h.shape : (batch, seq_len, hidden_size)
+        else:
+            x.shape : (seq_len, batch, input_size)
+            h.shape : (seq_len, batch, hidden_size)
+        '''
+        h, h_reverse = h
+        if h is None:
+            h = zeros(self.hidden_size)
+        if h_reverse is None:
+            h_reverse = zeros(self.hidden_size)
+
+        if self.batch_first and x.ndim == 3:
+            # x.ndim的数据是(seq_len, input_size)不需要变换
+            x = x.transpose(1, 0, 2)
+
+        h_list = []
+        if self.bidirectional:
+            h_reverse_list = []
+            for i in range(x.shape[0]):
+                h = self.fn(x[i:i + 1] @ self.Wx + h @ self.Wh + self.bias)
+                h_list.append(h)
+                h_reverse = self.fn(
+                    x[x.shape[0] - i - 1:x.shape[0] -
+                      i]) @ self.Wx + h_reverse @ self.Wh + self.bias_reverse
+                h_reverse_list.append(h_reverse)
+            output = F.concatenate(
+                F.concatenate(*h_list),
+                F.concatenate(*h_reverse_list),
+                axis=-1,
+            )
+        else:
+            for i in range(x.shape[0]):
+                h = self.fn(x[i:i + 1] @ self.Wx + h @ self.Wh + self.bias)
+                h_list.append(h)
+            output = F.concatenate(*h_list)
+
+        if self.batch_first and x.ndim == 3:
+            output = output.transpose(1, 0, 2)
+        return output
+
+    def __repr__(self) -> str:
+        return "{}(input_size={}, hidden_size={}, nonlinearity={}, batch_first={}, bidirectional={})".format(
+            self.__class__.__name__, self.input_size, self.hidden_size,
+            self.nonlinearity, self.batch_first, self.bidirectional)
+
+
+class LSTM(Module):
+    def __init__(
+        self,
+        input_size,
+        hidden_size,
+        batch_first=False,
+        bidirectional=False,
+    ) -> None:
+        super().__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.batch_first = batch_first
+        self.bidirectional = bidirectional
+        scale = 1 / self.hidden_size**0.5
+        low_high = (-scale, scale)
+
+        self.Wx = Parameter(uniform(*low_high, (input_size, hidden_size * 4)))
+        self.Wh = Parameter(uniform(*low_high, (hidden_size, hidden_size * 4)))
+        self.bias = Parameter(uniform(*low_high, hidden_size * 4))
+
+        if self.bidirectional:
+            self.Wx_reverse = Parameter(
+                uniform(*low_high, (input_size, hidden_size * 4)))
+            self.Wh_reverse = Parameter(
+                uniform(*low_high, (hidden_size, hidden_size * 4)))
+            self.bias_reverse = Parameter(uniform(*low_high, hidden_size * 4))
+
+    def forward(self, x: Tensor, h=(None, None)) -> Tensor:
+        c = zeros(self.hidden_size)
+        c_reverse = zeros(self.hidden_size)
+
+        h, h_reverse = h
+        if h is None:
+            h = zeros(self.hidden_size)
+        if h_reverse is None:
+            h_reverse = zeros(self.hidden_size)
+
+        if self.batch_first and x.ndim == 3:
+            x = x.transpose(1, 0, 2)
+
+        h_list = []
+
+        if self.bidirectional:
+            h_reverse_list = []
+            for id in range(x.shape[0]):
+                affine = x[id:id + 1] @ self.Wx + h @ self.Wh + self.bias
+                f_i_o = affine[..., :3 * self.hidden_size]
+                g = affine[..., -self.hidden_size:]
+                sigma_fio = F.sigmoid(f_i_o)
+                g = F.tanh(g)
+                f = sigma_fio[..., :self.hidden_size]
+                i = sigma_fio[..., self.hidden_size:2 * self.hidden_size]
+                o = sigma_fio[..., -self.hidden_size:]
+                c = F.mean(f * c + g * i, (0, 1))
+                h = o * F.tanh(c)
+                h_list.append(h)
+
+                affine = x[
+                    x.shape[0] - id - 1:x.shape[0] -
+                    id] @ self.Wx_reverse + h_reverse @ self.Wh_reverse + self.bias_reverse
+                f_i_o = affine[..., :3 * self.hidden_size]
+                g = affine[..., -self.hidden_size:]
+                sigma_fio = F.sigmoid(f_i_o)
+                g = F.tanh(g)
+                f = sigma_fio[..., :self.hidden_size]
+                i = sigma_fio[..., self.hidden_size:2 * self.hidden_size]
+                o = sigma_fio[..., -self.hidden_size:]
+                c = F.mean(f * c_reverse + g * i, (0, 1))
+                h_reverse = o * F.tanh(c_reverse)
+                h_reverse_list.append(h_reverse)
+
+                output = F.concatenate(
+                    F.concatenate(*h_list),
+                    F.concatenate(*h_reverse_list),
+                    axis=-1,
+                )
+        else:
+            for id in range(x.shape[0]):
+                affine = x[id:id + 1] @ self.Wx + h @ self.Wh + self.bias
+                f_i_o = affine[..., :3 * self.hidden_size]
+                g = affine[..., -self.hidden_size:]
+                sigma_fio = F.sigmoid(f_i_o)
+                g = F.tanh(g)
+                f = sigma_fio[..., :self.hidden_size]
+                i = sigma_fio[..., self.hidden_size:2 * self.hidden_size]
+                o = sigma_fio[..., -self.hidden_size:]
+                c = F.mean(f * c + g * i, (0, 1))
+                h = o * F.tanh(c)
+                h_list.append(h)
+            output = F.concatenate(*h_list)
+
+        if self.batch_first and x.ndim == 3:
+            output = output.transpose(1, 0, 2)
+        return output
+
+    def __repr__(self) -> str:
+        return "{}(input_size={}, hidden_size={}, batch_first={}, bidirectional={})".format(
+            self.__class__.__name__, self.input_size, self.hidden_size,
+            self.batch_first, self.bidirectional)
+
+
+class GRU(Module):
+    def __init__(
+        self,
+        input_size,
+        hidden_size,
+        batch_first=False,
+        bidirectional=False,
+    ) -> None:
+        super().__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.batch_first = batch_first
+        self.bidirectional = bidirectional
+        scale = 1 / self.hidden_size**0.5
+        low_high = (scale, -scale)
+
+        self.Wx = Parameter(uniform(*low_high, (input_size, 3 * hidden_size)))
+        self.Wh_zr = Parameter(
+            uniform(*low_high, (hidden_size, 2 * hidden_size)))
+        self.bias_zr = Parameter(uniform(*low_high, 2 * hidden_size))
+        self.Wh = Parameter(uniform(*low_high, (hidden_size, hidden_size)))
+        self.bias = Parameter(uniform(*low_high, self.hidden_size))
+
+        if self.bidirectional:
+            self.Wx_reverse = Parameter(
+                uniform(*low_high, (input_size, 3 * hidden_size)))
+            self.Wh_zr_reverse = Parameter(
+                uniform(*low_high, (hidden_size, 2 * hidden_size)))
+            self.bias_zr_recerse = Parameter(
+                uniform(*low_high, 2 * hidden_size))
+            self.Wh_reverse = Parameter(
+                uniform(*low_high, (hidden_size, hidden_size)))
+            self.bias_reverse = Parameter(uniform(*low_high, self.hidden_size))
+
+    def forward(self, x: Tensor, h=(None, None)) -> Tensor:
+        h, h_reverse = h
+        if h is None:
+            h = zeros(self.hidden_size)
+        if h_reverse is None:
+            h_reverse = zeros(self.hidden_size)
+
+        if self.batch_first and x.ndim == 3:
+            # x.ndim的数据是(seq_len, input_size)不需要变换
+            x = x.transpose(1, 0, 2)
+
+        h_list = []
+
+        if self.bidirectional:
+            h_reverse_list = []
+            for i in range(x.shape[0]):
+                affine = x[i:i + 1] @ self.Wx
+                zr = F.sigmoid(affine[..., :2 * self.hidden_size] +
+                               h @ self.Wh_zr + self.bias_zr)
+                z, r = zr[..., :self.hidden_size], zr[..., self.hidden_size:]
+                h_tilde = F.tanh(affine[..., -self.hidden_size:] +
+                                 (r * h) @ self.Wh + self.bias)
+                h = (1 - z) * h + z * h_tilde
+                h_list.append(h)
+
+                affine = x[x.shape[0] - i - 1:x.shape[0] - i] @ self.Wx_reverse
+                zr = F.sigmoid(affine[..., :2 * self.hidden_size] +
+                               h @ self.Wh_zr_reverse + self.bias_zr_recerse)
+                z, r = zr[..., :self.hidden_size], zr[..., self.hidden_size:]
+                h_tilde = F.tanh(affine[..., -self.hidden_size:] +
+                                 (r * h) @ self.Wh_reverse + self.bias_reverse)
+                h_reverse = (1 - z) * h_reverse + z * h_tilde
+                h_reverse_list.append(h_reverse)
+
+                output = F.concatenate(
+                    F.concatenate(*h_list),
+                    F.concatenate(*h_reverse_list),
+                    axis=-1,
+                )
+
+        else:
+            for i in range(x.shape[0]):
+                affine = x[i:i + 1] @ self.Wx
+                zr = F.sigmoid(affine[..., :2 * self.hidden_size] +
+                               h @ self.Wh_zr + self.bias_zr)
+                z, r = zr[..., :self.hidden_size], zr[..., self.hidden_size:]
+                h_tilde = F.tanh(affine[..., -self.hidden_size:] +
+                                 (r * h) @ self.Wh + self.bias)
+                h = (1 - z) * h + z * h_tilde
+                h_list.append(h)
+            output = F.concatenate(*h_list)
+
+        if self.batch_first and x.ndim == 3:
+            output = output.transpose(1, 0, 2)
+        return output
+
+    def __repr__(self) -> str:
+        return "{}(input_size={}, hidden_size={}, batch_first={}, bidirectional={})".format(
+            self.__class__.__name__, self.input_size, self.hidden_size,
+            self.batch_first, self.bidirectional)

@@ -12,6 +12,7 @@ class Graph:
         '''添加静态图节点'''
         cls.node_list.append(node)
 
+    @classmethod
     def clear(cls):
         '''清空计算图'''
         cls.node_list.clear()
@@ -54,9 +55,6 @@ class Tensor:
         是否需要求梯度;
     grad : ndarray
         梯度数据，为和data相同形状的数组(初始化为全0);
-    retain_grad : bool
-        是否保留梯度，和PyTorch一样，如果retain_grad为False(默认),
-        节点的梯度不再被需要时就会释放;
     next : list[Tensor]
         下游节点列表；
     last : list[Tensor]
@@ -84,7 +82,6 @@ class Tensor:
         ), "Only Tensors of floating point and complex dtype can require gradients"
         self.grad: np.ndarray = np.zeros_like(
             self.data) if self.requires_grad else None
-        self.retain_grad: bool = False
         self.next: list = list()
         self.last: list = list()
         if self.requires_grad:
@@ -130,7 +127,7 @@ class Tensor:
         return transpose(self, axes)
 
     def max(self, axis=None):
-        return sum(self, axis)
+        return max(self, axis)
 
     def mean(self, axis=None):
         return mean(self, axis)
@@ -319,6 +316,8 @@ class Tensor:
             print("AD failed because the node is not in graph")
             return
 
+        assert self.data.ndim == 0, "backward should be called only on a scalar"
+
         self.grad = np.ones_like(self.data)
         for i in range(len(Graph.node_list) - 1, -1, -1):
             if Graph.node_list[i] is self:
@@ -343,7 +342,7 @@ class Tensor:
                     )
                 last.grad += add_grad
 
-            if not node.is_leaf and not node.retain_grad:
+            if not node.is_leaf:
                 node.grad = None
 
         if not retain_graph:

@@ -40,10 +40,11 @@ class Net(nn.Module):
         super().__init__()
         self.rnn = nn.GRU(
             input_size=8,
-            hidden_size=16,
+            hidden_size=32,
             batch_first=True,
+            bidirectional=True,
         )
-        self.fc = nn.Linear(16, 10)
+        self.fc = nn.Linear(64, 10)
 
     def forward(self, x):
         x = self.rnn(x)
@@ -52,6 +53,7 @@ class Net(nn.Module):
 
 
 net = Net()
+print(net)
 optim = Adam(net.parameters(), lr=0.01)
 loss = nn.CrossEntropyLoss()
 EPOCHES = 50
@@ -86,15 +88,13 @@ for epoch in range(EPOCHES):
             np.argmax(net(Tensor(test_X)).data, axis=1),
             np.argmax(test_y, axis=1),
         ))
-    if epoch % 10 == 9:
-        print(
-            "epoch {:3d}, train loss {:.6f}, train acc {:.4f}, test acc {:.4f}"
-            .format(
-                epoch + 1,
-                loss_list[-1],
-                train_acc[-1] * 100,
-                test_acc[-1] * 100,
-            ))
+    print("epoch {:3d}, train loss {:.6f}, train acc {:.4f}, test acc {:.4f}".
+          format(
+              epoch + 1,
+              loss_list[-1],
+              train_acc[-1] * 100,
+              test_acc[-1] * 100,
+          ))
 
 plt.figure(figsize=(10, 5))
 plt.subplot(1, 2, 1)
