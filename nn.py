@@ -270,6 +270,38 @@ class MaxPool2d(Module):
         )
 
 
+class Embedding(Module):
+    def __init__(
+        self,
+        num_embeddings: int,
+        embedding_dim: int,
+        padding: bool = False,
+    ) -> None:
+        super().__init__()
+        self.num_embeddings = num_embeddings
+        self.embedding_dim = embedding_dim
+        self.padding = padding
+        self.weight = Parameter(randn(num_embeddings, embedding_dim))
+        if padding:
+            self.padding_weight = F.concatenate(
+                zeros(embedding_dim),
+                self.weight,
+            )
+        else:
+            self.padding_weight = self.weight
+
+    def forward(self, x) -> Tensor:
+        return self.padding_weight[x]
+
+    def __repr__(self) -> str:
+        return "{}(num_embeddings={}, embedding_dim={}, padding={})".format(
+            self.__class__.__name__,
+            self.num_embeddings,
+            self.embedding_dim,
+            self.padding,
+        )
+
+
 # 激活函数
 class Sigmoid(Module):
     def forward(self, x):
