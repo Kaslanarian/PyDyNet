@@ -2,6 +2,13 @@
 
 前作：[PyNet: Use NumPy to build neuron network](https://github.com/Kaslanarian/PyNet)。在那里我们基于求导规则实现了全连接网络。在这里，我们向当今的深度学习框架看齐，实现属于自己的DL框架。
 
+## Update
+
+- 5.10:修改损失函数的定义方式：加入reduction机制，加入Embedding;
+- 5.15:重构了RNN, LSTM和GRU，支持双向;
+- 5.16:允许PyDyNet作为第三方库安装；开始手册的撰写, [成型但未完成](./doc/build/html/pydynet.html).
+- ...
+
 ## Overview
 
 PyDyNet也是纯NumPy实现的神经网络，语法受PyTorch的启发，大致结构如下：

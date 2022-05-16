@@ -2,10 +2,8 @@ import numpy as np
 
 
 class Graph:
-    '''
-    计算图，全局共用一个动态计算图
-    '''
-    node_list = list()
+    '''计算图，全局共用一个动态计算图'''
+    node_list: list = list()
 
     @classmethod
     def add_node(cls, node):
@@ -49,11 +47,11 @@ class Tensor:
 
     Attributes
     ----------
-    data : ndarray
+    data : numpy.ndarray
         核心数据，为NumPy数组;
     requires_grad : bool
         是否需要求梯度;
-    grad : ndarray
+    grad : numpy.ndarray
         梯度数据，为和data相同形状的数组(初始化为全0);
     next : list[Tensor]
         下游节点列表；
@@ -62,14 +60,11 @@ class Tensor:
 
     Example
     -------
-    ```python
-    import numpy as np
-    from tensor import Tensor
-
-    x = Tensor(1., requires_grad=True)
-    y = Tensor([1, 2, 3], dtype=float)
-    z = Tensor(np.random.rand(3, 4))
-    ```
+    >>> import numpy as np
+    >>> from pydynet.tensor import Tensor
+    >>> x = Tensor(1., requires_grad=True)
+    >>> y = Tensor([1, 2, 3], dtype=float)
+    >>> z = Tensor(np.random.rand(3, 4))
     '''
     def __init__(self, data, requires_grad: bool = False, dtype=None) -> None:
         if isinstance(data, Tensor):
@@ -90,29 +85,64 @@ class Tensor:
 
     @property
     def is_leaf(self):
-        '''
-        判断是否为叶节点:需要求导且无上游节点的节点为叶节点
-        '''
+        '''判断是否为叶节点:需要求导且无上游节点的节点为叶节点.'''
         return not self.requires_grad or len(self.last) == 0
 
     @property
     def shape(self):
+        '''张量的形状，用法同NumPy.
+        
+        Example
+        -------
+        >>> from pydynet import Tensor
+        >>> Tensor([[2, 2]]).shape
+        (1, 2)
+        '''
         return self.data.shape
 
     @property
     def ndim(self):
+        '''张量的维度，用法同NumPy.
+        
+        Example
+        -------
+        >>> from pydynet import Tensor
+        >>> Tensor([[2, 2]]).ndim
+        2
+        '''
         return self.data.ndim
 
     @property
     def dtype(self):
+        '''张量的数据类型，用法同NumPy.
+
+        Example
+        -------
+        >>> from pydynet import Tensor
+        >>> Tensor([[2, 2]]).dtype
+        dtype('int64')
+        '''
         return self.data.dtype
 
     @property
     def size(self):
+        '''张量的元素个数，用法同NumPy.
+
+        Example
+        -------
+        >>> from pydynet import Tensor
+        >>> Tensor([[1, 1]]).size
+        2
+        '''
         return self.data.size
 
     @property
     def T(self):
+        '''返回张量的完全转置，下面两种写法等价:
+
+        >>> y = x.T
+        >>> y = F.transpose(x)
+        '''
         return self.transpose()
 
     def astype(self, new_type):
@@ -144,11 +174,10 @@ class Tensor:
         node.last.append(self)
 
     def __repr__(self) -> str:
-        type_info = str(type(self))[8:-2]
-        return "<{}, {}, {}>".format(
+        return "{}({}, requires_grad={})".format(
+            "tensor",
             self.data,
-            self.dtype,
-            type_info[type_info.rfind(".") + 1:],
+            self.requires_grad,
         )
 
     def __add__(self, x):
@@ -210,10 +239,10 @@ class Tensor:
 
         Example
         -------
-        ```python
-        x = Tensor([1, 2, 3])
-        x[x <= 2] = 0 # [0, 0, 3]
-        ```
+        >>> x = Tensor([1, 2, 3])
+        >>> x[x <= 2] = 0
+        >>> x
+        <[0 0 3], int64, Tensor>
         '''
         assert not self.requires_grad, "In-place operation is forbidden in node requires grad."
         if isinstance(key, Tensor):
@@ -303,14 +332,13 @@ class Tensor:
 
         Example
         -------
-        ```python
-        from tensor import Tensor
-        import functional as F
-
-        x = Tensor(2., requires_grad=True)
-        y = x**2 + x - 1
-        y.backward()
-        ```
+        >>> from pydynet.tensor import Tensor
+        >>> import pydynet.functional as F
+        >>> x = Tensor(2., requires_grad=True)
+        >>> y = x**2 + x - 1
+        >>> y.backward()
+        >>> x.grad
+        5.
         '''
         if self not in Graph.node_list:
             print("AD failed because the node is not in graph")
@@ -379,6 +407,9 @@ class UnaryOperator(Tensor):
             下游流入该节点的梯度
         '''
 
+    def __repr__(self) -> str:
+        return "{}({})".format(self.__class__.__name__, self.data)
+
 
 class BinaryOperator(Tensor):
     '''
@@ -402,6 +433,9 @@ class BinaryOperator(Tensor):
     def grad_fn(self, x: Tensor, grad) -> np.ndarray:
         pass
 
+    def __repr__(self) -> str:
+        return "{}({})".format(self.__class__.__name__, self.data)
+
 
 class add(BinaryOperator):
     '''
@@ -409,13 +443,10 @@ class add(BinaryOperator):
 
     Example
     -------
-    ```python
-    x = Tensor(1.)
-    y = Tensor(2.)
-    z = add(x, y)
-    # ，在Tensor类中进行了重载，所以也可以写成
-    z = x + y
-    ```
+    >>> x = Tensor(1.)
+    >>> y = Tensor(2.)
+    >>> z = add(x, y) # 在Tensor类中进行了重载，所以也可以写成
+    >>> z = x + y
     '''
     def forward(self, x: Tensor, y: Tensor):
         return x.data + y.data
@@ -717,17 +748,16 @@ class get_slice(UnaryOperator):
 
     Example
     -------
-    ```python
-    x = Tensor(
-        np.arange(12).reshape(3, 4).astype(float),
-        requires_grad=True,
-    )
-    y = x[:2, :2].sum()
-    y.backward()
-    print(x.grad) # [[1. 1. 0. 0.]
-                  #  [1. 1. 0. 0.]
-                  #  [0. 0. 0. 0.]]
-    ```
+    >>> x = Tensor(
+            np.arange(12).reshape(3, 4).astype(float),
+            requires_grad=True,
+        )
+    >>> y = x[:2, :2].sum()
+    >>> y.backward()
+    >>> x.grad 
+    [[1. 1. 0. 0.]
+     [1. 1. 0. 0.]
+     [0. 0. 0. 0.]]
     '''
     def __init__(self, x: Tensor, key) -> None:
         if isinstance(key, Tensor):
