@@ -1,18 +1,6 @@
-from tensor import Tensor, UnaryOperator
-import tensor
+from .tensor import Tensor, UnaryOperator
+from .tensor import add, sub, mul, div, matmul, abs, sum, mean, max, reshape, transpose
 import numpy as np
-
-add = tensor.add
-sub = tensor.sub
-mul = tensor.mul
-div = tensor.div
-matmul = tensor.matmul
-abs = tensor.abs
-sum = tensor.sum
-mean = tensor.mean
-max = tensor.max
-reshape = tensor.reshape
-transpose = tensor.transpose
 
 
 class exp(UnaryOperator):

@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.datasets import fetch_olivetti_faces, load_digits
+from sklearn.datasets import load_digits
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -11,14 +11,11 @@ try:
 except:
     pass
 
-import sys
-
-sys.path.append("..")
-from tensor import Graph, Tensor
-import nn
-import functional as F
-from optimizer import Adam
-from dataloader import train_loader
+from pydynet.tensor import Tensor
+import pydynet.functional as F
+import pydynet.nn as nn
+from pydynet.optimizer import Adam
+from pydynet.dataloader import train_loader
 
 np.random.seed(42)
 
@@ -52,6 +49,7 @@ class Net(nn.Module):
 
 
 net = Net()
+print(net)
 optim = Adam(net.parameters(), lr=0.01)
 loss = nn.CrossEntropyLoss()
 EPOCHES = 50

@@ -30,7 +30,7 @@ graph BT
 1. 将NumPy数组包装成具有梯度等信息的张量(Tensor):
 
    ```python
-   from tensor import Tensor
+   from pydynet import Tensor
 
    x = Tensor(1., requires_grad=True)
    print(x.data) # 1.
@@ -40,8 +40,8 @@ graph BT
 2. 将NumPy数组的计算(包括数学运算、切片、形状变换等)抽象成基础算子(Basic operators)，并对部分运算加以重载：
 
    ```python
-   from tensor import Tensor
-   import functional as F
+   from pydynet import Tensor
+   import pydynet.functional as F
 
    x = Tensor([1, 2, 3])
    y = F.exp(x) + x
@@ -52,8 +52,8 @@ graph BT
 3. 手动编写基础算子的梯度，实现和PyTorch相同的动态图自动微分机制(Autograd)，从而实现反向传播
 
    ```python
-   from tensor import Tensor
-   import functional as F
+   from pydynet import Tensor
+   import pydynet.functional as F
 
    x = Tensor([1, 2, 3], requires_grad=True)
    y = F.log(x) + x
@@ -73,8 +73,8 @@ graph BT
 5. 实现了Mudule，包括激活函数，损失函数等，从而我们可以像下面这样定义神经网络，损失函数项：
 
    ```python
-   import nn
-   import functional as F
+   import pydynet.nn as nn
+   import pydynet.functional as F
 
    n_input = 64
    n_hidden = 128
@@ -101,6 +101,14 @@ graph BT
 7. Dropout机制，Batch Normalization机制，以及将网络划分成训练阶段和评估阶段；
 8. 基于im2col高效实现Conv1d, Conv2d, max_pool1d和max_pool2d，从而实现CNN；
 9. 支持多层的**双向**RNN，LSTM和GRU。
+
+## Install
+
+```bash
+python setup.py install
+```
+
+安装成功后就可以跑下面的例子
 
 ## Example
 

@@ -1,9 +1,5 @@
-import sys
-
-sys.path.append("..")
-
-import functional as F
-from tensor import Tensor
+import pydynet.functional as F
+from pydynet.tensor import Tensor
 import numpy as np
 import matplotlib.pyplot as plt
 

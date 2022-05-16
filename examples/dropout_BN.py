@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.datasets import fetch_olivetti_faces
@@ -6,12 +5,11 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-sys.path.append("..")
-from tensor import Tensor
-import functional as F
-import nn
-from optimizer import Adam
-from dataloader import train_loader
+from pydynet.tensor import Tensor
+import pydynet.functional as F
+import pydynet.nn as nn
+from pydynet.optimizer import Adam
+from pydynet.dataloader import train_loader
 
 try:
     import seaborn as sns

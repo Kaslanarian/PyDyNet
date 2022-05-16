@@ -1,11 +1,8 @@
-import sys
-
-sys.path.append("..")
-from tensor import Tensor
-import nn
-import functional as F
-from optimizer import Adam
-from dataloader import train_loader
+from pydynet.tensor import Tensor
+import pydynet.functional as F
+import pydynet.nn as nn
+from pydynet.optimizer import Adam
+from pydynet.dataloader import train_loader
 
 import numpy as np
 import matplotlib.pyplot as plt

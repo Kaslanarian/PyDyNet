@@ -1,7 +1,12 @@
 from collections import OrderedDict
-from tensor import Tensor, zeros, randn, uniform
-import functional as F
 import numpy as np
+from .tensor import Tensor, zeros, randn, uniform
+from .functional import mean as F_mean, square as F_square, sqrt as F_sqrt
+from .functional import conv1d as F_conv1d, conv2d as F_conv2d
+from .functional import max_pool1d as F_max_pool1d, max_pool2d as F_max_pool2d
+from .functional import concatenate as F_concatenate
+from .functional import sigmoid as F_sigmoid, tanh as F_tanh, relu as F_relu, leaky_relu as F_leaky_relu
+from .functional import mse_loss as F_mse_loss, nll_loss as F_nll_loss, cross_entropy_loss as F_cross_entropy_loss
 
 
 class Parameter(Tensor):
@@ -116,10 +121,10 @@ class BatchNorm(Module):
 
     def forward(self, x):
         if self._train:
-            mean = F.mean(x, 0)
+            mean = F_mean(x, 0)
             center_data = x - mean
-            var = F.mean(F.square(center_data), 0)
-            std_data = center_data / F.sqrt(var)
+            var = F_mean(F_square(center_data), 0)
+            std_data = center_data / F_sqrt(var)
 
             self.running_mean *= self.gamma
             self.running_mean += (1 - self.gamma) * mean
@@ -128,7 +133,7 @@ class BatchNorm(Module):
 
             return std_data * self.scale + self.shift
         else:
-            return (x - self.running_mean) * self.scale / F.sqrt(
+            return (x - self.running_mean) * self.scale / F_sqrt(
                 self.running_var) + self.shift
 
     def __repr__(self) -> str:
@@ -167,7 +172,7 @@ class Conv1d(Module):
         )) if bias else None
 
     def forward(self, x):
-        conv1d = F.conv1d(x, self.kernel, self.padding, self.stride)
+        conv1d = F_conv1d(x, self.kernel, self.padding, self.stride)
         if self.bias is not None:
             return conv1d + self.bias
         return conv1d
@@ -215,7 +220,7 @@ class Conv2d(Module):
         )) if bias else None
 
     def forward(self, x):
-        conv2d = F.conv2d(x, self.kernel, self.padding, self.stride)
+        conv2d = F_conv2d(x, self.kernel, self.padding, self.stride)
         if self.bias is not None:
             return conv2d + self.bias
         return conv2d
@@ -240,7 +245,7 @@ class MaxPool1d(Module):
         self.padding = padding
 
     def forward(self, x):
-        return F.max_pool1d(x, self.kernel_size, self.stride, self.padding)
+        return F_max_pool1d(x, self.kernel_size, self.stride, self.padding)
 
     def __repr__(self) -> str:
         return "{}(kernel_size={}, stride={}, padding={})".format(
@@ -259,7 +264,7 @@ class MaxPool2d(Module):
         self.padding = padding
 
     def forward(self, x):
-        return F.max_pool2d(x, self.kernel_size, self.stride, self.padding)
+        return F_max_pool2d(x, self.kernel_size, self.stride, self.padding)
 
     def __repr__(self) -> str:
         return "{}(kernel_size={}, stride={}, padding={})".format(
@@ -283,7 +288,7 @@ class Embedding(Module):
         self.padding = padding
         self.weight = Parameter(randn(num_embeddings, embedding_dim))
         if padding:
-            self.padding_weight = F.concatenate(
+            self.padding_weight = F_concatenate(
                 zeros(embedding_dim),
                 self.weight,
             )
@@ -305,7 +310,7 @@ class Embedding(Module):
 # 激活函数
 class Sigmoid(Module):
     def forward(self, x):
-        return F.sigmoid(x)
+        return F_sigmoid(x)
 
     def __repr__(self) -> str:
         return "{}()".format(self.__class__.__name__)
@@ -313,12 +318,12 @@ class Sigmoid(Module):
 
 class Tanh(Sigmoid):
     def forward(self, x):
-        return F.tanh(x)
+        return F_tanh(x)
 
 
 class ReLU(Sigmoid):
     def forward(self, x):
-        return F.relu(x)
+        return F_relu(x)
 
 
 class LeakyReLU(Module):
@@ -327,7 +332,7 @@ class LeakyReLU(Module):
         self.alpha = alpha
 
     def forward(self, x):
-        return F.leaky_relu(x, self.alpha)
+        return F_leaky_relu(x, self.alpha)
 
     def __repr__(self) -> str:
         return "{}(alpha={})".format(self.__class__.__name__, self.alpha)
@@ -341,17 +346,17 @@ class MSELoss(Module):
         assert self.reduction in {'mean', 'sum'}
 
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return F.mse_loss(y_pred, y_true, reduction=self.reduction)
+        return F_mse_loss(y_pred, y_true, reduction=self.reduction)
 
 
 class NLLLoss(MSELoss):
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return F.nll_loss(y_pred, y_true, reduction=self.reduction)
+        return F_nll_loss(y_pred, y_true, reduction=self.reduction)
 
 
 class CrossEntropyLoss(MSELoss):
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return F.cross_entropy_loss(y_pred, y_true, reduction=self.reduction)
+        return F_cross_entropy_loss(y_pred, y_true, reduction=self.reduction)
 
 
 # RNN
@@ -388,8 +393,8 @@ class RNN(Module):
         self.bidirectional = bidirectional
         self.nonlinearity = nonlinearity
         self.fn = {
-            "tanh": F.tanh,
-            "relu": F.relu,
+            "tanh": F_tanh,
+            "relu": F_relu,
         }[nonlinearity]
         scale = 1 / self.hidden_size**0.5
         low_high = (-scale, scale)
@@ -434,16 +439,16 @@ class RNN(Module):
                     x[x.shape[0] - i - 1:x.shape[0] -
                       i]) @ self.Wx + h_reverse @ self.Wh + self.bias_reverse
                 h_reverse_list.append(h_reverse)
-            output = F.concatenate(
-                F.concatenate(*h_list),
-                F.concatenate(*h_reverse_list),
+            output = F_concatenate(
+                F_concatenate(*h_list),
+                F_concatenate(*h_reverse_list),
                 axis=-1,
             )
         else:
             for i in range(x.shape[0]):
                 h = self.fn(x[i:i + 1] @ self.Wx + h @ self.Wh + self.bias)
                 h_list.append(h)
-            output = F.concatenate(*h_list)
+            output = F_concatenate(*h_list)
 
         if self.batch_first and x.ndim == 3:
             output = output.transpose(1, 0, 2)
@@ -503,13 +508,13 @@ class LSTM(Module):
                 affine = x[id:id + 1] @ self.Wx + h @ self.Wh + self.bias
                 f_i_o = affine[..., :3 * self.hidden_size]
                 g = affine[..., -self.hidden_size:]
-                sigma_fio = F.sigmoid(f_i_o)
-                g = F.tanh(g)
+                sigma_fio = F_sigmoid(f_i_o)
+                g = F_tanh(g)
                 f = sigma_fio[..., :self.hidden_size]
                 i = sigma_fio[..., self.hidden_size:2 * self.hidden_size]
                 o = sigma_fio[..., -self.hidden_size:]
-                c = F.mean(f * c + g * i, (0, 1))
-                h = o * F.tanh(c)
+                c = F_mean(f * c + g * i, (0, 1))
+                h = o * F_tanh(c)
                 h_list.append(h)
 
                 affine = x[
@@ -517,18 +522,18 @@ class LSTM(Module):
                     id] @ self.Wx_reverse + h_reverse @ self.Wh_reverse + self.bias_reverse
                 f_i_o = affine[..., :3 * self.hidden_size]
                 g = affine[..., -self.hidden_size:]
-                sigma_fio = F.sigmoid(f_i_o)
-                g = F.tanh(g)
+                sigma_fio = F_sigmoid(f_i_o)
+                g = F_tanh(g)
                 f = sigma_fio[..., :self.hidden_size]
                 i = sigma_fio[..., self.hidden_size:2 * self.hidden_size]
                 o = sigma_fio[..., -self.hidden_size:]
-                c = F.mean(f * c_reverse + g * i, (0, 1))
-                h_reverse = o * F.tanh(c_reverse)
+                c = F_mean(f * c_reverse + g * i, (0, 1))
+                h_reverse = o * F_tanh(c_reverse)
                 h_reverse_list.append(h_reverse)
 
-                output = F.concatenate(
-                    F.concatenate(*h_list),
-                    F.concatenate(*h_reverse_list),
+                output = F_concatenate(
+                    F_concatenate(*h_list),
+                    F_concatenate(*h_reverse_list),
                     axis=-1,
                 )
         else:
@@ -536,15 +541,15 @@ class LSTM(Module):
                 affine = x[id:id + 1] @ self.Wx + h @ self.Wh + self.bias
                 f_i_o = affine[..., :3 * self.hidden_size]
                 g = affine[..., -self.hidden_size:]
-                sigma_fio = F.sigmoid(f_i_o)
-                g = F.tanh(g)
+                sigma_fio = F_sigmoid(f_i_o)
+                g = F_tanh(g)
                 f = sigma_fio[..., :self.hidden_size]
                 i = sigma_fio[..., self.hidden_size:2 * self.hidden_size]
                 o = sigma_fio[..., -self.hidden_size:]
-                c = F.mean(f * c + g * i, (0, 1))
-                h = o * F.tanh(c)
+                c = F_mean(f * c + g * i, (0, 1))
+                h = o * F_tanh(c)
                 h_list.append(h)
-            output = F.concatenate(*h_list)
+            output = F_concatenate(*h_list)
 
         if self.batch_first and x.ndim == 3:
             output = output.transpose(1, 0, 2)
@@ -607,40 +612,40 @@ class GRU(Module):
             h_reverse_list = []
             for i in range(x.shape[0]):
                 affine = x[i:i + 1] @ self.Wx
-                zr = F.sigmoid(affine[..., :2 * self.hidden_size] +
+                zr = F_sigmoid(affine[..., :2 * self.hidden_size] +
                                h @ self.Wh_zr + self.bias_zr)
                 z, r = zr[..., :self.hidden_size], zr[..., self.hidden_size:]
-                h_tilde = F.tanh(affine[..., -self.hidden_size:] +
+                h_tilde = F_tanh(affine[..., -self.hidden_size:] +
                                  (r * h) @ self.Wh + self.bias)
                 h = (1 - z) * h + z * h_tilde
                 h_list.append(h)
 
                 affine = x[x.shape[0] - i - 1:x.shape[0] - i] @ self.Wx_reverse
-                zr = F.sigmoid(affine[..., :2 * self.hidden_size] +
+                zr = F_sigmoid(affine[..., :2 * self.hidden_size] +
                                h @ self.Wh_zr_reverse + self.bias_zr_recerse)
                 z, r = zr[..., :self.hidden_size], zr[..., self.hidden_size:]
-                h_tilde = F.tanh(affine[..., -self.hidden_size:] +
+                h_tilde = F_tanh(affine[..., -self.hidden_size:] +
                                  (r * h) @ self.Wh_reverse + self.bias_reverse)
                 h_reverse = (1 - z) * h_reverse + z * h_tilde
                 h_reverse_list.append(h_reverse)
 
-                output = F.concatenate(
-                    F.concatenate(*h_list),
-                    F.concatenate(*h_reverse_list),
+                output = F_concatenate(
+                    F_concatenate(*h_list),
+                    F_concatenate(*h_reverse_list),
                     axis=-1,
                 )
 
         else:
             for i in range(x.shape[0]):
                 affine = x[i:i + 1] @ self.Wx
-                zr = F.sigmoid(affine[..., :2 * self.hidden_size] +
+                zr = F_sigmoid(affine[..., :2 * self.hidden_size] +
                                h @ self.Wh_zr + self.bias_zr)
                 z, r = zr[..., :self.hidden_size], zr[..., self.hidden_size:]
-                h_tilde = F.tanh(affine[..., -self.hidden_size:] +
+                h_tilde = F_tanh(affine[..., -self.hidden_size:] +
                                  (r * h) @ self.Wh + self.bias)
                 h = (1 - z) * h + z * h_tilde
                 h_list.append(h)
-            output = F.concatenate(*h_list)
+            output = F_concatenate(*h_list)
 
         if self.batch_first and x.ndim == 3:
             output = output.transpose(1, 0, 2)
