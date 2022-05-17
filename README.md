@@ -112,6 +112,8 @@ graph BT
 ## Install
 
 ```bash
+git clone https://github.com/Kaslanarian/PyDyNet
+cd PyDyNet
 python setup.py install
 ```
 
