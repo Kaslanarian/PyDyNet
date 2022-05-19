@@ -6,7 +6,7 @@
 
 - 5.10:修改损失函数的定义方式：加入reduction机制，加入Embedding;
 - 5.15:重构了RNN, LSTM和GRU，支持双向;
-- 5.16:允许PyDyNet作为第三方库安装；开始手册的撰写, [成型但未完成](./doc/build/html/pydynet.html).
+- 5.16:允许PyDyNet作为第三方库安装；开始手册的撰写(基于Sphinx).
 - ...
 
 ## Overview
@@ -112,6 +112,8 @@ graph BT
 ## Install
 
 ```bash
+git clone https://github.com/Kaslanarian/PyDyNet
+cd PyDyNet
 python setup.py install
 ```
 
