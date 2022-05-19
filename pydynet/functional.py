@@ -4,52 +4,76 @@ import numpy as np
 
 
 class exp(UnaryOperator):
+    '''指数运算
+    
+    Example
+    -------
+    >>> x = Tensor(1.)
+    >>> y = exp(x)
+    '''
     def forward(self, x: Tensor):
         return np.exp(x.data)
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         return self.data * grad
 
 
 class log(UnaryOperator):
+    '''对数运算
+    
+    Example
+    -------
+    >>> x = Tensor(1.)
+    >>> y = log(x)
+    '''
     def forward(self, x: Tensor):
         return np.log(x.data)
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         return grad / x.data
 
 
 class sigmoid(UnaryOperator):
+    '''Sigmoid运算，我们前向传播避免了溢出问题'''
     def forward(self, x: Tensor) -> np.ndarray:
         sigmoid = np.zeros(x.shape)
         sigmoid[x.data > 0] = 1 / (1 + np.exp(-x.data[x.data > 0]))
         sigmoid[x.data <= 0] = 1 - 1 / (1 + np.exp(x.data[x.data <= 0]))
         return sigmoid
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         return self.data * (1 - self.data) * grad
 
 
 class tanh(UnaryOperator):
+    '''Tanh运算，我们前向传播避免了溢出问题'''
     def forward(self, x: Tensor) -> np.ndarray:
         tanh = np.zeros(x.shape)
         tanh[x.data > 0] = 2 / (1 + np.exp(-2 * x.data[x.data > 0])) - 1
         tanh[x.data <= 0] = 1 - 2 / (1 + np.exp(2 * x.data[x.data <= 0]))
         return tanh
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         return (1 - self.data**2) * grad
 
 
 class relu(UnaryOperator):
+    '''ReLU运算
+    
+    :math:`\\text{relu}(x)=\\max(x, 0)`
+    '''
     def forward(self, x: Tensor) -> np.ndarray:
         return np.array([x.data, np.zeros(x.shape)]).max(0)
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         return grad * (x.data >= 0)
 
 
 class leaky_relu(UnaryOperator):
+    '''LeakyReLU运算
+
+    :math:`\\text{leaky_relu}(x, \\alpha)=\\max(x, \\alpha x)`
+    '''
     def __init__(self, x: Tensor, alpha: float) -> None:
         self.alpha = alpha
         super().__init__(x)
@@ -57,7 +81,7 @@ class leaky_relu(UnaryOperator):
     def forward(self, x: Tensor) -> np.ndarray:
         return np.array([x.data, self.alpha * x.data]).max(0)
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         dlrelu = np.zeros(self.shape)
         dlrelu[self.data >= 0] = 1.
         dlrelu[self.data < 0] = self.alpha
@@ -65,26 +89,30 @@ class leaky_relu(UnaryOperator):
 
 
 def sqrt(x: Tensor):
+    '''平方根函数'''
     return x**0.5
 
 
 def square(x: Tensor):
+    '''平方函数'''
     return x * x
 
 
 def softmax(x: Tensor, axis=None, keepdims=False):
+    '''Softmax函数'''
     x_sub_max = x - Tensor(np.ones(x.shape) * np.max(x.data))
     exp_ = exp(x_sub_max)
     return exp_ / sum(exp_, axis=axis, keepdims=keepdims)
 
 
 def log_softmax(x: Tensor, axis=None, keepdims=False):
+    '''log-softmax函数'''
     x_sub_max = x - Tensor(np.ones(x.shape) * np.max(x.data))
     return x_sub_max - log(sum(exp(x_sub_max), axis=axis, keepdims=keepdims))
 
 
 # 卷积相关
-class im2col1d(UnaryOperator):
+class __im2col1d(UnaryOperator):
     def __init__(self, x: Tensor, kernel_size: int, stride: int) -> None:
         self.N, self.in_channels, self.n_features = x.shape
         self.kernel_size = kernel_size
@@ -104,7 +132,7 @@ class im2col1d(UnaryOperator):
             col[..., i, :] = x.data[..., i:i_max:self.stride]
         return col
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         grad_col = grad
         grad_x = np.zeros((self.N, self.in_channels, self.n_features))
         for i in range(self.kernel_size):
@@ -113,7 +141,7 @@ class im2col1d(UnaryOperator):
         return grad_x
 
 
-class pad1d(UnaryOperator):
+class __pad1d(UnaryOperator):
     def __init__(self, x: Tensor, pad_width=0) -> None:
         self.pad_width = pad_width
         super().__init__(x)
@@ -125,17 +153,32 @@ class pad1d(UnaryOperator):
             'constant',
         )
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if self.pad_width == 0:
             return grad[...]
         return grad[..., self.pad_width:-self.pad_width]
 
 
 def conv1d(x: Tensor, kernel: Tensor, padding: int = 0, stride: int = 1):
+    '''一维卷积函数
+
+    基于im2col实现的一维卷积.
+    
+    Parameters
+    ----------
+    x : Tensor
+        输入数据，形状为(N, in_channels, n_features);
+    kernel : Tensor
+        卷积核，形状为(out_channels, in_channels, kernel_size);
+    padding : int, default=0
+        对输入特征两边补0数量;
+    stride : int, default=1
+        卷积步长.
+    '''
     N, _, _ = x.shape
     out_channels, _, kernel_size = kernel.shape
-    pad_x = pad1d(x, padding)
-    col = im2col1d(pad_x, kernel_size, stride)
+    pad_x = __pad1d(x, padding)
+    col = __im2col1d(pad_x, kernel_size, stride)
     n_output = col.shape[-1]
     col = col.transpose(0, 3, 1, 2).reshape(N * n_output, -1)
     col_filter = kernel.reshape(out_channels, -1).T
@@ -144,9 +187,24 @@ def conv1d(x: Tensor, kernel: Tensor, padding: int = 0, stride: int = 1):
 
 
 def max_pool1d(x: Tensor, kernel_size: int, stride: int, padding=0):
+    '''一维池化函数
+
+    基于im2col实现的一维池化.
+    
+    Parameters
+    ----------
+    x : Tensor
+        输入数据，形状为(N, in_channels, n_features);
+    kernel_size : int
+        池化核大小;
+    stride : int
+        卷积步长;
+    padding : int, default=0
+        对输入特征两边补0数量.
+    '''
     N, out_channels, _ = x.shape
-    pad_x = pad1d(x, padding)
-    col = im2col1d(pad_x, kernel_size, stride)
+    pad_x = __pad1d(x, padding)
+    col = __im2col1d(pad_x, kernel_size, stride)
     n_output = col.shape[-1]
     col = col.transpose(0, 3, 1, 2).reshape(-1, kernel_size)
     out = max(col, axis=1)
@@ -154,7 +212,7 @@ def max_pool1d(x: Tensor, kernel_size: int, stride: int, padding=0):
     return out
 
 
-class im2col2d(UnaryOperator):
+class __im2col2d(UnaryOperator):
     def __init__(self, x: Tensor, kernel_size, stride: int) -> None:
         self.N, self.in_channels, self.n_h, self.n_w = x.shape
         self.kernel_size = kernel_size
@@ -176,7 +234,7 @@ class im2col2d(UnaryOperator):
 
         return col
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         grad_col = grad
         grad_x = np.zeros((self.N, self.in_channels, self.n_h, self.n_w))
         for i in range(self.kernel_size):
@@ -188,7 +246,7 @@ class im2col2d(UnaryOperator):
         return grad_x
 
 
-class pad2d(UnaryOperator):
+class __pad2d(UnaryOperator):
     def __init__(self, x: Tensor, pad_width=0) -> None:
         self.pad_width = pad_width
         super().__init__(x)
@@ -201,7 +259,7 @@ class pad2d(UnaryOperator):
             'constant',
         )
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if self.pad_width == 0:
             return grad[...]
         return grad[..., self.pad_width:-self.pad_width,
@@ -209,10 +267,25 @@ class pad2d(UnaryOperator):
 
 
 def conv2d(x: Tensor, kernel: Tensor, padding: int = 0, stride: int = 1):
+    '''二维卷积函数
+
+    基于im2col实现的二维卷积. 为了实现上的方便，我们不考虑长宽不同的卷积核，步长和补零。
+    
+    Parameters
+    ----------
+    x : Tensor
+        输入数据，形状为(N, in_channels, n_height, n_width);
+    kernel : Tensor
+        卷积核，形状为(out_channels, in_channels, kernel_height, kernel_width);
+    padding : int, default=0
+        对输入图片周围补0数量;
+    stride : int, default=1
+        卷积步长.
+    '''
     N, _, _, _ = x.shape
     out_channels, _, kernel_size, _ = kernel.shape
-    pad_x = pad2d(x, padding)
-    col = im2col2d(pad_x, kernel_size, stride)
+    pad_x = __pad2d(x, padding)
+    col = __im2col2d(pad_x, kernel_size, stride)
     out_h, out_w = col.shape[-2:]
     col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)
     col_filter = kernel.reshape(out_channels, -1).T
@@ -221,9 +294,24 @@ def conv2d(x: Tensor, kernel: Tensor, padding: int = 0, stride: int = 1):
 
 
 def max_pool2d(x: Tensor, kernel_size: int, stride: int, padding=0):
+    '''二维卷积函数池化
+
+    基于im2col实现的二维卷积. 为了实现上的方便，我们不考虑长宽不同的kernel_size，步长和补零。
+    
+    Parameters
+    ----------
+    x : Tensor
+        输入数据，形状为(N, in_channels, n_height, n_width);
+    kernel_size : int
+        池化核尺寸;
+    stride : int, default=1
+        卷积步长;
+    padding : int, default=0
+        对输入图片周围补0数量;
+    '''
     N, in_channels, _, _ = x.shape
-    pad_x = pad2d(x, padding)
-    col = im2col2d(pad_x, kernel_size, stride)
+    pad_x = __pad2d(x, padding)
+    col = __im2col2d(pad_x, kernel_size, stride)
     out_h, out_w = col.shape[-2:]
     col = col.transpose(0, 4, 5, 1, 2, 3).reshape(
         -1,
@@ -235,6 +323,15 @@ def max_pool2d(x: Tensor, kernel_size: int, stride: int, padding=0):
 
 
 class concatenate(Tensor):
+    '''对多个张量进行连接，用法类似于`numpy.concatenate`
+    
+    Parameters
+    ----------
+    *tensors : 
+        待连接的张量：
+    axis : default=0
+        连接轴，默认是沿着第一个轴拼接.
+    '''
     def __init__(self, *tensors, axis=0) -> None:
         requires_grad = False
         self.tensors = list(tensors)
@@ -254,7 +351,7 @@ class concatenate(Tensor):
     def forward(self):
         return np.concatenate([t.data for t in self.tensors], axis=self.axis)
 
-    def grad_fn(self, x, grad):
+    def grad_fn(self, x, grad: np.ndarray):
         x_id = self.tensors.index(x)
         start = self.indices[x_id]
         end = self.indices[x_id + 1]
@@ -264,6 +361,7 @@ class concatenate(Tensor):
 
 
 def mse_loss(y_pred, y_true, reduction='mean'):
+    '''均方误差'''
     square_sum = square(y_pred - y_true)
     if reduction == 'mean':
         return mean(square_sum)
@@ -274,6 +372,7 @@ def mse_loss(y_pred, y_true, reduction='mean'):
 
 
 def nll_loss(y_pred, y_true, reduction='mean'):
+    '''负对数似然'''
     nll = -y_pred * y_true
     if reduction == 'mean':
         return mean(nll)
@@ -284,6 +383,7 @@ def nll_loss(y_pred, y_true, reduction='mean'):
 
 
 def cross_entropy_loss(y_pred, y_true, reduction='mean'):
+    '''交叉熵损失'''
     update_y_pred = y_pred - np.max(y_pred.data)
     log_sum_exp = log(sum(exp(update_y_pred), 1, keepdims=True))
     nll = -(update_y_pred - log_sum_exp) * y_true

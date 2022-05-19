@@ -338,46 +338,35 @@ class LeakyReLU(Module):
         return "{}(alpha={})".format(self.__class__.__name__, self.alpha)
 
 
-# 损失函数
-class MSELoss(Module):
+class Loss(Module):
+    '''损失函数基类'''
     def __init__(self, reduction='mean') -> None:
         super().__init__()
         self.reduction = reduction
         assert self.reduction in {'mean', 'sum'}
 
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
+        raise NotImplementedError
+
+
+class MSELoss(Loss):
+    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         return F_mse_loss(y_pred, y_true, reduction=self.reduction)
 
 
-class NLLLoss(MSELoss):
+class NLLLoss(Loss):
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         return F_nll_loss(y_pred, y_true, reduction=self.reduction)
 
 
-class CrossEntropyLoss(MSELoss):
+class CrossEntropyLoss(Loss):
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         return F_cross_entropy_loss(y_pred, y_true, reduction=self.reduction)
 
 
 # RNN
 class RNN(Module):
-    '''
-    单层RNN，不像Pytorch那样可以指定num_layers进行多层堆叠，我们的RNN是单层可双向的，
-    如果要搭建多层RNN:
-
-    ```python
-    class MultiLayerRNN(Module):
-        def __init__(self):
-            super().__init__()
-            self.rnn1 = RNN(...)
-            self.rnn2 = RNN(...)
-            ...
-
-        def forward(x, h=None):
-            x = self.rnn1(x, h)
-            return self.rnn2(x)
-    ```
-    '''
+    '''单层RNN，不像Pytorch那样可以指定num_layers进行多层堆叠，我们的RNN是单层可双向的，'''
     def __init__(
         self,
         input_size,
@@ -411,14 +400,6 @@ class RNN(Module):
             self.bias_reverse = Parameter(uniform(*low_high, hidden_size))
 
     def forward(self, x: Tensor, h=(None, None)):
-        '''
-        if batch_first:
-            x.shape : (batch, seq_len, input_size)
-            h.shape : (batch, seq_len, hidden_size)
-        else:
-            x.shape : (seq_len, batch, input_size)
-            h.shape : (seq_len, batch, hidden_size)
-        '''
         h, h_reverse = h
         if h is None:
             h = zeros(self.hidden_size)

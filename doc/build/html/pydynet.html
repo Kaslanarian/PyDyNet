@@ -128,6 +128,15 @@
 <dt class="sig sig-object py" id="pydynet.functional.concatenate">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">concatenate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">tensors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.concatenate" title="永久链接至目标"></a></dt>
 <dd><p>基类：<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.Tensor</span></code></a></p>
+<p>对多个张量进行连接，用法类似于`numpy.concatenate`</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*tensors</strong> – 待连接的张量：</p></li>
+<li><p><strong>axis</strong> (<em>default=0</em>) – 连接轴，默认是沿着第一个轴拼接.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.concatenate.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.concatenate.forward" title="永久链接至目标"></a></dt>
@@ -135,7 +144,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.concatenate.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.concatenate.grad_fn" title="永久链接至目标"></a></dt>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.concatenate.grad_fn" title="永久链接至目标"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -143,22 +152,53 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.functional.conv1d">
 <span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">conv1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.conv1d" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>一维卷积函数</p>
+<p>基于im2col实现的一维卷积.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><em>Tensor</em></a>) – 输入数据，形状为(N, in_channels, n_features);</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><em>Tensor</em></a>) – 卷积核，形状为(out_channels, in_channels, kernel_size);</p></li>
+<li><p><strong>padding</strong> (<em>int</em><em>, </em><em>default=0</em>) – 对输入特征两边补0数量;</p></li>
+<li><p><strong>stride</strong> (<em>int</em><em>, </em><em>default=1</em>) – 卷积步长.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.functional.conv2d">
 <span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">conv2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.conv2d" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>二维卷积函数</p>
+<p>基于im2col实现的二维卷积. 为了实现上的方便，我们不考虑长宽不同的卷积核，步长和补零。</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><em>Tensor</em></a>) – 输入数据，形状为(N, in_channels, n_height, n_width);</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><em>Tensor</em></a>) – 卷积核，形状为(out_channels, in_channels, kernel_height, kernel_width);</p></li>
+<li><p><strong>padding</strong> (<em>int</em><em>, </em><em>default=0</em>) – 对输入图片周围补0数量;</p></li>
+<li><p><strong>stride</strong> (<em>int</em><em>, </em><em>default=1</em>) – 卷积步长.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.functional.cross_entropy_loss">
 <span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">cross_entropy_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.cross_entropy_loss" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>交叉熵损失</p>
+</dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydynet.functional.exp">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">exp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.exp" title="永久链接至目标"></a></dt>
 <dd><p>基类：<a class="reference internal" href="#pydynet.tensor.UnaryOperator" title="pydynet.tensor.UnaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.UnaryOperator</span></code></a></p>
+<p>指数运算</p>
+<p class="rubric">示例</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.exp.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.exp.forward" title="永久链接至目标"></a></dt>
@@ -167,57 +207,13 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.exp.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.exp.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.exp.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="pydynet.functional.im2col1d">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">im2col1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.im2col1d" title="永久链接至目标"></a></dt>
-<dd><p>基类：<a class="reference internal" href="#pydynet.tensor.UnaryOperator" title="pydynet.tensor.UnaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.UnaryOperator</span></code></a></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pydynet.functional.im2col1d.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.im2col1d.forward" title="永久链接至目标"></a></dt>
-<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydynet.functional.im2col1d.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.im2col1d.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
-</dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="pydynet.functional.im2col2d">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">im2col2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.im2col2d" title="永久链接至目标"></a></dt>
-<dd><p>基类：<a class="reference internal" href="#pydynet.tensor.UnaryOperator" title="pydynet.tensor.UnaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.UnaryOperator</span></code></a></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pydynet.functional.im2col2d.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.im2col2d.forward" title="永久链接至目标"></a></dt>
-<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydynet.functional.im2col2d.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.im2col2d.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
-</dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -228,6 +224,8 @@
 <dt class="sig sig-object py" id="pydynet.functional.leaky_relu">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">leaky_relu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.leaky_relu" title="永久链接至目标"></a></dt>
 <dd><p>基类：<a class="reference internal" href="#pydynet.tensor.UnaryOperator" title="pydynet.tensor.UnaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.UnaryOperator</span></code></a></p>
+<p>LeakyReLU运算</p>
+<p><span class="math notranslate nohighlight">\(\text{leaky_relu}(x, \alpha)=\max(x, \alpha x)\)</span></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.leaky_relu.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.leaky_relu.forward" title="永久链接至目标"></a></dt>
@@ -236,11 +234,13 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.leaky_relu.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.leaky_relu.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.leaky_relu.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -251,6 +251,12 @@
 <dt class="sig sig-object py" id="pydynet.functional.log">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.log" title="永久链接至目标"></a></dt>
 <dd><p>基类：<a class="reference internal" href="#pydynet.tensor.UnaryOperator" title="pydynet.tensor.UnaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.UnaryOperator</span></code></a></p>
+<p>对数运算</p>
+<p class="rubric">示例</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.log.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.log.forward" title="永久链接至目标"></a></dt>
@@ -259,11 +265,13 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.log.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.log.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.log.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -273,78 +281,61 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.functional.log_softmax">
 <span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">log_softmax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.log_softmax" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>log-softmax函数</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.functional.max_pool1d">
 <span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">max_pool1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.max_pool1d" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>一维池化函数</p>
+<p>基于im2col实现的一维池化.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><em>Tensor</em></a>) – 输入数据，形状为(N, in_channels, n_features);</p></li>
+<li><p><strong>kernel_size</strong> (<em>int</em>) – 池化核大小;</p></li>
+<li><p><strong>stride</strong> (<em>int</em>) – 卷积步长;</p></li>
+<li><p><strong>padding</strong> (<em>int</em><em>, </em><em>default=0</em>) – 对输入特征两边补0数量.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.functional.max_pool2d">
 <span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">max_pool2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.max_pool2d" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>二维卷积函数池化</p>
+<p>基于im2col实现的二维卷积. 为了实现上的方便，我们不考虑长宽不同的kernel_size，步长和补零。</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><em>Tensor</em></a>) – 输入数据，形状为(N, in_channels, n_height, n_width);</p></li>
+<li><p><strong>kernel_size</strong> (<em>int</em>) – 池化核尺寸;</p></li>
+<li><p><strong>stride</strong> (<em>int</em><em>, </em><em>default=1</em>) – 卷积步长;</p></li>
+<li><p><strong>padding</strong> (<em>int</em><em>, </em><em>default=0</em>) – 对输入图片周围补0数量;</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.functional.mse_loss">
 <span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">mse_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.mse_loss" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>均方误差</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.functional.nll_loss">
 <span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">nll_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.nll_loss" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="pydynet.functional.pad1d">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">pad1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.pad1d" title="永久链接至目标"></a></dt>
-<dd><p>基类：<a class="reference internal" href="#pydynet.tensor.UnaryOperator" title="pydynet.tensor.UnaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.UnaryOperator</span></code></a></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pydynet.functional.pad1d.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.pad1d.forward" title="永久链接至目标"></a></dt>
-<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydynet.functional.pad1d.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.pad1d.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
-</dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="pydynet.functional.pad2d">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">pad2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.pad2d" title="永久链接至目标"></a></dt>
-<dd><p>基类：<a class="reference internal" href="#pydynet.tensor.UnaryOperator" title="pydynet.tensor.UnaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.UnaryOperator</span></code></a></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pydynet.functional.pad2d.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.pad2d.forward" title="永久链接至目标"></a></dt>
-<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydynet.functional.pad2d.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.pad2d.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
-</dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
-</dd>
-</dl>
-</dd></dl>
-
+<dd><p>负对数似然</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydynet.functional.relu">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">relu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.relu" title="永久链接至目标"></a></dt>
 <dd><p>基类：<a class="reference internal" href="#pydynet.tensor.UnaryOperator" title="pydynet.tensor.UnaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.UnaryOperator</span></code></a></p>
+<p>ReLU运算</p>
+<p><span class="math notranslate nohighlight">\(\text{relu}(x)=\max(x, 0)\)</span></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.relu.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.relu.forward" title="永久链接至目标"></a></dt>
@@ -353,11 +344,13 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.relu.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.relu.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.relu.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -368,6 +361,7 @@
 <dt class="sig sig-object py" id="pydynet.functional.sigmoid">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">sigmoid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.sigmoid" title="永久链接至目标"></a></dt>
 <dd><p>基类：<a class="reference internal" href="#pydynet.tensor.UnaryOperator" title="pydynet.tensor.UnaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.UnaryOperator</span></code></a></p>
+<p>Sigmoid运算，我们前向传播避免了溢出问题</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.sigmoid.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.sigmoid.forward" title="永久链接至目标"></a></dt>
@@ -376,11 +370,13 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.sigmoid.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.sigmoid.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.sigmoid.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -390,22 +386,26 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.functional.softmax">
 <span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">softmax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.softmax" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>Softmax函数</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.functional.sqrt">
 <span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">sqrt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.sqrt" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>平方根函数</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.functional.square">
 <span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">square</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.square" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>平方函数</p>
+</dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydynet.functional.tanh">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.functional.</span></span><span class="sig-name descname"><span class="pre">tanh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.functional.tanh" title="永久链接至目标"></a></dt>
 <dd><p>基类：<a class="reference internal" href="#pydynet.tensor.UnaryOperator" title="pydynet.tensor.UnaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.UnaryOperator</span></code></a></p>
+<p>Tanh运算，我们前向传播避免了溢出问题</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.tanh.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.tanh.forward" title="永久链接至目标"></a></dt>
@@ -414,11 +414,13 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.functional.tanh.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.tanh.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.functional.tanh.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -464,7 +466,7 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="pydynet.nn.CrossEntropyLoss">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.nn.</span></span><span class="sig-name descname"><span class="pre">CrossEntropyLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.nn.CrossEntropyLoss" title="永久链接至目标"></a></dt>
-<dd><p>基类：<a class="reference internal" href="#pydynet.nn.MSELoss" title="pydynet.nn.MSELoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.nn.MSELoss</span></code></a></p>
+<dd><p>基类：<a class="reference internal" href="#pydynet.nn.Loss" title="pydynet.nn.Loss"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.nn.Loss</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.nn.CrossEntropyLoss.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></span><a class="headerlink" href="#pydynet.nn.CrossEntropyLoss.forward" title="永久链接至目标"></a></dt>
@@ -539,9 +541,21 @@
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="pydynet.nn.Loss">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.nn.</span></span><span class="sig-name descname"><span class="pre">Loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.nn.Loss" title="永久链接至目标"></a></dt>
+<dd><p>基类：<a class="reference internal" href="#pydynet.nn.Module" title="pydynet.nn.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.nn.Module</span></code></a></p>
+<p>损失函数基类</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydynet.nn.Loss.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></span><a class="headerlink" href="#pydynet.nn.Loss.forward" title="永久链接至目标"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="pydynet.nn.MSELoss">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.nn.</span></span><span class="sig-name descname"><span class="pre">MSELoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.nn.MSELoss" title="永久链接至目标"></a></dt>
-<dd><p>基类：<a class="reference internal" href="#pydynet.nn.Module" title="pydynet.nn.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.nn.Module</span></code></a></p>
+<dd><p>基类：<a class="reference internal" href="#pydynet.nn.Loss" title="pydynet.nn.Loss"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.nn.Loss</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.nn.MSELoss.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></span><a class="headerlink" href="#pydynet.nn.MSELoss.forward" title="永久链接至目标"></a></dt>
@@ -600,7 +614,7 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="pydynet.nn.NLLLoss">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.nn.</span></span><span class="sig-name descname"><span class="pre">NLLLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.nn.NLLLoss" title="永久链接至目标"></a></dt>
-<dd><p>基类：<a class="reference internal" href="#pydynet.nn.MSELoss" title="pydynet.nn.MSELoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.nn.MSELoss</span></code></a></p>
+<dd><p>基类：<a class="reference internal" href="#pydynet.nn.Loss" title="pydynet.nn.Loss"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.nn.Loss</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.nn.NLLLoss.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></span><a class="headerlink" href="#pydynet.nn.NLLLoss.forward" title="永久链接至目标"></a></dt>
@@ -618,35 +632,11 @@
 <dt class="sig sig-object py" id="pydynet.nn.RNN">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.nn.</span></span><span class="sig-name descname"><span class="pre">RNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonlinearity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tanh'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_first</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.nn.RNN" title="永久链接至目标"></a></dt>
 <dd><p>基类：<a class="reference internal" href="#pydynet.nn.Module" title="pydynet.nn.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.nn.Module</span></code></a></p>
-<p>单层RNN，不像Pytorch那样可以指定num_layers进行多层堆叠，我们的RNN是单层可双向的，
-如果要搭建多层RNN:</p>
-<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
-class MultiLayerRNN(Module):</p>
-<blockquote>
-<div><dl class="simple">
-<dt>def __init__(self):</dt><dd><p>super().__init__()
-self.rnn1 = RNN(…)
-self.rnn2 = RNN(…)
-…</p>
-</dd>
-<dt>def forward(x, h=None):</dt><dd><p>x = self.rnn1(x, h)
-return self.rnn2(x)</p>
-</dd>
-</dl>
-</div></blockquote>
-<p><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<p>单层RNN，不像Pytorch那样可以指定num_layers进行多层堆叠，我们的RNN是单层可双向的，</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.nn.RNN.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(None,</span> <span class="pre">None)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.nn.RNN.forward" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>if batch_first:</dt><dd><p>x.shape : (batch, seq_len, input_size)
-h.shape : (batch, seq_len, hidden_size)</p>
-</dd>
-<dt>else:</dt><dd><p>x.shape : (seq_len, batch, input_size)
-h.shape : (seq_len, batch, hidden_size)</p>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -855,16 +845,36 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <dt class="sig sig-object py" id="pydynet.tensor.BinaryOperator">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.tensor.</span></span><span class="sig-name descname"><span class="pre">BinaryOperator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.BinaryOperator" title="永久链接至目标"></a></dt>
 <dd><p>基类：<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.Tensor</span></code></a></p>
-<p>二元运算算子的基类，将一个一元函数抽象成类</p>
+<p>二元运算算子的基类，将一个二元函数抽象成类</p>
+<p class="rubric">示例</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="p">(</span><span class="n">BinaryOperator</span><span class="p">):</span>
+<span class="go">        def forward(self, x: Tensor, y: Tensor):</span>
+<span class="go">            return x.data + y.data</span>
+<span class="go">        def grad_fn(self, node: Tensor, grad: np.ndarray):</span>
+<span class="go">            return np.ones(self.shape) * grad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="mf">2.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.BinaryOperator.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.BinaryOperator.forward" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.BinaryOperator.grad_fn">
 <span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.BinaryOperator.grad_fn" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
+</dd>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -895,6 +905,23 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pydynet.tensor.Graph.node_list">
 <span class="sig-name descname"><span class="pre">node_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#pydynet.tensor.Graph.node_list" title="永久链接至目标"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydynet.tensor.MultiOperator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.tensor.</span></span><span class="sig-name descname"><span class="pre">MultiOperator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">tensors</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.MultiOperator" title="永久链接至目标"></a></dt>
+<dd><p>基类：<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.Tensor</span></code></a></p>
+<p>多元运算算子基类</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydynet.tensor.MultiOperator.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">tensors</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.MultiOperator.forward" title="永久链接至目标"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydynet.tensor.MultiOperator.grad_fn">
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.MultiOperator.grad_fn" title="永久链接至目标"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1011,7 +1038,8 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.Tensor.build_edge">
 <span class="sig-name descname"><span class="pre">build_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.Tensor.build_edge" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>构建两节点的有向边，正常不适用</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pydynet.tensor.Tensor.dtype">
@@ -1120,6 +1148,16 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.tensor.</span></span><span class="sig-name descname"><span class="pre">UnaryOperator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.UnaryOperator" title="永久链接至目标"></a></dt>
 <dd><p>基类：<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.Tensor</span></code></a></p>
 <p>一元运算算子的基类，将一个一元函数抽象成类</p>
+<p class="rubric">示例</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">exp</span><span class="p">(</span><span class="n">UnaryOperator</span><span class="p">):</span>
+<span class="go">        def forward(self, x: Tensor):</span>
+<span class="go">            return np.exp(x.data)</span>
+<span class="go">        def grad_fn(self, x: Tensor, grad) -&gt; np.ndarray:</span>
+<span class="go">            return self.data * grad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.UnaryOperator.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.UnaryOperator.forward" title="永久链接至目标"></a></dt>
@@ -1129,10 +1167,12 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.UnaryOperator.grad_fn">
 <span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.UnaryOperator.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1159,11 +1199,13 @@ h.shape : (seq_len, batch, hidden_size)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.abs.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.abs.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.abs.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1185,12 +1227,21 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.add.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.add.forward" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.add.grad_fn">
 <span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.add.grad_fn" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
+</dd>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -1209,12 +1260,21 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.div.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.div.forward" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.div.grad_fn">
 <span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.div.grad_fn" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
+</dd>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -1244,11 +1304,13 @@ h.shape : (seq_len, batch, hidden_size)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.get_slice.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.get_slice.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.get_slice.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1260,7 +1322,7 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.tensor.</span></span><span class="sig-name descname"><span class="pre">matmul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.matmul" title="永久链接至目标"></a></dt>
 <dd><p>基类：<a class="reference internal" href="#pydynet.tensor.BinaryOperator" title="pydynet.tensor.BinaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.BinaryOperator</span></code></a></p>
 <p>矩阵乘法算子，在Tensor类中进行重载，张量的矩阵乘法遵从NumPy Matmul的规则.</p>
-<p><a class="reference external" href="https://welts.xyz/2022/04/26/broadcast/">https://welts.xyz/2022/04/26/broadcast/</a></p>
+<p>参考 : <a class="reference external" href="https://welts.xyz/2022/04/26/broadcast/">https://welts.xyz/2022/04/26/broadcast/</a></p>
 <div class="admonition seealso">
 <p class="admonition-title">参见</p>
 <dl class="simple">
@@ -1271,12 +1333,21 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.matmul.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.matmul.forward" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.matmul.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.matmul.grad_fn" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.matmul.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
+</dd>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -1308,11 +1379,13 @@ h.shape : (seq_len, batch, hidden_size)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.max.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.max.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.max.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1347,11 +1420,13 @@ h.shape : (seq_len, batch, hidden_size)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.mean.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.mean.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.mean.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1364,11 +1439,11 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <dd><p>基类：<a class="reference internal" href="#pydynet.tensor.BinaryOperator" title="pydynet.tensor.BinaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.BinaryOperator</span></code></a></p>
 <p>元素级乘法算子，在Tensor类中进行重载</p>
 <p class="rubric">示例</p>
-<p><code class="docutils literal notranslate"><span class="pre">`python</span>
-<span class="pre">x</span> <span class="pre">=</span> <span class="pre">Tensor([1.,</span> <span class="pre">2.])</span>
-<span class="pre">y</span> <span class="pre">=</span> <span class="pre">Tensor([2.,</span> <span class="pre">3.])</span>
-<span class="pre">z</span> <span class="pre">=</span> <span class="pre">mul(x,</span> <span class="pre">y)</span> <span class="pre">#</span> <span class="pre">[2,</span> <span class="pre">6]</span>
-<span class="pre">`</span></code></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">([</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z</span> <span class="o">=</span> <span class="n">mul</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="c1"># [2, 6]</span>
+</pre></div>
+</div>
 <div class="admonition seealso">
 <p class="admonition-title">参见</p>
 <dl class="simple">
@@ -1379,19 +1454,37 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.mul.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.mul.forward" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.mul.grad_fn">
 <span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.mul.grad_fn" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
+</dd>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.tensor.ones">
 <span class="sig-prename descclassname"><span class="pre">pydynet.tensor.</span></span><span class="sig-name descname"><span class="pre">ones</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.ones" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>全1张量</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – 张量形状</p></li>
+<li><p><strong>require_grad</strong> (<em>bool</em><em>, </em><em>default=False</em>) – 是否需要求导</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydynet.tensor.pow">
@@ -1408,24 +1501,51 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.pow.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.pow.forward" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.pow.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.pow.grad_fn" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.pow.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
+</dd>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.tensor.rand">
 <span class="sig-prename descclassname"><span class="pre">pydynet.tensor.</span></span><span class="sig-name descname"><span class="pre">rand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.rand" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>[0, 1)均匀分布张量</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*shape</strong> – 张量形状</p></li>
+<li><p><strong>require_grad</strong> (<em>bool</em><em>, </em><em>default=False</em>) – 是否需要求导</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.tensor.randn">
 <span class="sig-prename descclassname"><span class="pre">pydynet.tensor.</span></span><span class="sig-name descname"><span class="pre">randn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.randn" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>0-1正态分布张量</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*shape</strong> – 张量形状</p></li>
+<li><p><strong>require_grad</strong> (<em>bool</em><em>, </em><em>default=False</em>) – 是否需要求导</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydynet.tensor.reshape">
@@ -1445,11 +1565,13 @@ h.shape : (seq_len, batch, hidden_size)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.reshape.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.reshape.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.reshape.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1471,12 +1593,21 @@ h.shape : (seq_len, batch, hidden_size)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.sub.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.sub.forward" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.sub.grad_fn">
 <span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.sub.grad_fn" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
+</dd>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -1494,17 +1625,16 @@ h.shape : (seq_len, batch, hidden_size)</p>
 </dd>
 </dl>
 <p class="rubric">示例</p>
-<p><a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a>python
-x = Tensor(</p>
-<blockquote>
-<div><p>[[1, 2, 3],
-[4, 5, 6]]</p>
-</div></blockquote>
-<p>)
-s1 = x.sum(0) # [5, 7, 9]
-s2 = x.sum(1) # [6, 15]
-s3 = sum(x, keepdims=True) # [[21]]
-<a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span>
+<span class="go">        [[1, 2, 3],</span>
+<span class="go">        [4, 5, 6]]</span>
+<span class="go">    )</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s1</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># [5, 7, 9]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s2</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># [6, 15]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s3</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># [[21]]</span>
+<span class="go">```</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.sum.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.sum.forward" title="永久链接至目标"></a></dt>
@@ -1513,11 +1643,13 @@ s3 = sum(x, keepdims=True) # [[21]]
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.sum.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.sum.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.sum.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1542,11 +1674,13 @@ s3 = sum(x, keepdims=True) # [[21]]
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.tensor.transpose.grad_fn">
-<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.transpose.grad_fn" title="永久链接至目标"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">Tensor</span></dt><dd><p>上游节点</p>
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.tensor.transpose.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
 </dd>
-<dt>grad<span class="classifier">ndarray</span></dt><dd><p>下游流入该节点的梯度</p>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1555,17 +1689,91 @@ s3 = sum(x, keepdims=True) # [[21]]
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.tensor.uniform">
-<span class="sig-prename descclassname"><span class="pre">pydynet.tensor.</span></span><span class="sig-name descname"><span class="pre">uniform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.uniform" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">pydynet.tensor.</span></span><span class="sig-name descname"><span class="pre">uniform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.uniform" title="永久链接至目标"></a></dt>
+<dd><p>均匀分布张量</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> (<em>float</em>) – 均匀分布下界;</p></li>
+<li><p><strong>high</strong> (<em>float</em>) – 均匀分布下界;</p></li>
+<li><p><strong>*shape</strong> – 张量形状</p></li>
+<li><p><strong>require_grad</strong> (<em>bool</em><em>, </em><em>default=False</em>) – 是否需要求导</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.tensor.zeros">
 <span class="sig-prename descclassname"><span class="pre">pydynet.tensor.</span></span><span class="sig-name descname"><span class="pre">zeros</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.tensor.zeros" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>全零张量</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – 张量形状</p></li>
+<li><p><strong>require_grad</strong> (<em>bool</em><em>, </em><em>default=False</em>) – 是否需要求导</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 <section id="module-pydynet">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pydynet" title="永久链接至标题"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pydynet.BinaryOperator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.</span></span><span class="sig-name descname"><span class="pre">BinaryOperator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.BinaryOperator" title="永久链接至目标"></a></dt>
+<dd><p>基类：<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.Tensor</span></code></a></p>
+<p>二元运算算子的基类，将一个二元函数抽象成类</p>
+<p class="rubric">示例</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="p">(</span><span class="n">BinaryOperator</span><span class="p">):</span>
+<span class="go">        def forward(self, x: Tensor, y: Tensor):</span>
+<span class="go">            return x.data + y.data</span>
+<span class="go">        def grad_fn(self, node: Tensor, grad: np.ndarray):</span>
+<span class="go">            return np.ones(self.shape) * grad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="mf">2.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydynet.BinaryOperator.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.BinaryOperator.forward" title="永久链接至目标"></a></dt>
+<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydynet.BinaryOperator.grad_fn">
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.BinaryOperator.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
+</dd>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydynet.MultiOperator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.</span></span><span class="sig-name descname"><span class="pre">MultiOperator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">tensors</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.MultiOperator" title="永久链接至目标"></a></dt>
+<dd><p>基类：<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.Tensor</span></code></a></p>
+<p>多元运算算子基类</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydynet.MultiOperator.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">tensors</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.MultiOperator.forward" title="永久链接至目标"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydynet.MultiOperator.grad_fn">
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.MultiOperator.grad_fn" title="永久链接至目标"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pydynet.Tensor">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.</span></span><span class="sig-name descname"><span class="pre">Tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.Tensor" title="永久链接至目标"></a></dt>
@@ -1678,7 +1886,8 @@ s3 = sum(x, keepdims=True) # [[21]]
 <dl class="py method">
 <dt class="sig sig-object py" id="pydynet.Tensor.build_edge">
 <span class="sig-name descname"><span class="pre">build_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.Tensor.build_edge" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>构建两节点的有向边，正常不适用</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pydynet.Tensor.dtype">
@@ -1782,30 +1991,113 @@ s3 = sum(x, keepdims=True) # [[21]]
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="pydynet.UnaryOperator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydynet.</span></span><span class="sig-name descname"><span class="pre">UnaryOperator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.UnaryOperator" title="永久链接至目标"></a></dt>
+<dd><p>基类：<a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">pydynet.tensor.Tensor</span></code></a></p>
+<p>一元运算算子的基类，将一个一元函数抽象成类</p>
+<p class="rubric">示例</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">exp</span><span class="p">(</span><span class="n">UnaryOperator</span><span class="p">):</span>
+<span class="go">        def forward(self, x: Tensor):</span>
+<span class="go">            return np.exp(x.data)</span>
+<span class="go">        def grad_fn(self, x: Tensor, grad) -&gt; np.ndarray:</span>
+<span class="go">            return self.data * grad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydynet.UnaryOperator.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.UnaryOperator.forward" title="永久链接至目标"></a></dt>
+<dd><p>前向传播函数，参数为Tensor，返回的是NumPy数组</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydynet.UnaryOperator.grad_fn">
+<span class="sig-name descname"><span class="pre">grad_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydynet.tensor.Tensor" title="pydynet.tensor.Tensor"><span class="pre">pydynet.tensor.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#pydynet.UnaryOperator.grad_fn" title="永久链接至目标"></a></dt>
+<dd><p>反向传播函数，参数为下游节点，从上游流入该节点梯度。
+注：”上游”和”下游”针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.</p>
+<dl class="simple">
+<dt>x<span class="classifier">Tensor</span></dt><dd><p>下游节点</p>
+</dd>
+<dt>grad<span class="classifier">ndarray</span></dt><dd><p>上游流入该节点的梯度</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.ones">
 <span class="sig-prename descclassname"><span class="pre">pydynet.</span></span><span class="sig-name descname"><span class="pre">ones</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.ones" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>全1张量</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – 张量形状</p></li>
+<li><p><strong>require_grad</strong> (<em>bool</em><em>, </em><em>default=False</em>) – 是否需要求导</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.rand">
 <span class="sig-prename descclassname"><span class="pre">pydynet.</span></span><span class="sig-name descname"><span class="pre">rand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.rand" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>[0, 1)均匀分布张量</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*shape</strong> – 张量形状</p></li>
+<li><p><strong>require_grad</strong> (<em>bool</em><em>, </em><em>default=False</em>) – 是否需要求导</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.randn">
 <span class="sig-prename descclassname"><span class="pre">pydynet.</span></span><span class="sig-name descname"><span class="pre">randn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.randn" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>0-1正态分布张量</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*shape</strong> – 张量形状</p></li>
+<li><p><strong>require_grad</strong> (<em>bool</em><em>, </em><em>default=False</em>) – 是否需要求导</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.uniform">
-<span class="sig-prename descclassname"><span class="pre">pydynet.</span></span><span class="sig-name descname"><span class="pre">uniform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.uniform" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">pydynet.</span></span><span class="sig-name descname"><span class="pre">uniform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.uniform" title="永久链接至目标"></a></dt>
+<dd><p>均匀分布张量</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> (<em>float</em>) – 均匀分布下界;</p></li>
+<li><p><strong>high</strong> (<em>float</em>) – 均匀分布下界;</p></li>
+<li><p><strong>*shape</strong> – 张量形状</p></li>
+<li><p><strong>require_grad</strong> (<em>bool</em><em>, </em><em>default=False</em>) – 是否需要求导</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydynet.zeros">
 <span class="sig-prename descclassname"><span class="pre">pydynet.</span></span><span class="sig-name descname"><span class="pre">zeros</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydynet.zeros" title="永久链接至目标"></a></dt>
-<dd></dd></dl>
+<dd><p>全零张量</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – 张量形状</p></li>
+<li><p><strong>require_grad</strong> (<em>bool</em><em>, </em><em>default=False</em>) – 是否需要求导</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 </section>

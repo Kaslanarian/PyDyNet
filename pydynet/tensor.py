@@ -138,11 +138,6 @@ class Tensor:
 
     @property
     def T(self):
-        '''返回张量的完全转置，下面两种写法等价:
-
-        >>> y = x.T
-        >>> y = F.transpose(x)
-        '''
         return self.transpose()
 
     def astype(self, new_type):
@@ -165,11 +160,8 @@ class Tensor:
     def sum(self, axis=None):
         return sum(self, axis)
 
-    @property
-    def T(self):
-        return transpose(self)
-
     def build_edge(self, node):
+        '''构建两节点的有向边，正常不适用'''
         self.next.append(node)
         node.last.append(self)
 
@@ -341,10 +333,10 @@ class Tensor:
         5.
         '''
         if self not in Graph.node_list:
-            print("AD failed because the node is not in graph")
+            print("AD failed because the node is not in graph.")
             return
 
-        assert self.data.ndim == 0, "backward should be called only on a scalar"
+        assert self.data.ndim == 0, "backward should be called only on a scalar."
 
         self.grad = np.ones_like(self.data)
         for i in range(len(Graph.node_list) - 1, -1, -1):
@@ -384,6 +376,16 @@ class Tensor:
 class UnaryOperator(Tensor):
     '''
     一元运算算子的基类，将一个一元函数抽象成类
+
+    Example
+    -------
+    >>> class exp(UnaryOperator):
+            def forward(self, x: Tensor):
+                return np.exp(x.data)
+            def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+                return self.data * grad
+    >>> x = Tensor(1.)
+    >>> y = exp(x)
     '''
     def __init__(self, x: Tensor) -> None:
         if not isinstance(x, Tensor):
@@ -395,25 +397,39 @@ class UnaryOperator(Tensor):
         x.build_edge(self)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        '''
-        前向传播函数，参数为Tensor，返回的是NumPy数组
-        '''
+        '''前向传播函数，参数为Tensor，返回的是NumPy数组'''
+        raise NotImplementedError
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         '''
+        反向传播函数，参数为下游节点，从上游流入该节点梯度。
+        注："上游"和"下游"针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.
+
         x : Tensor
-            上游节点
+            下游节点
         grad : ndarray
-            下游流入该节点的梯度
+            上游流入该节点的梯度
         '''
+        raise NotImplementedError
 
     def __repr__(self) -> str:
-        return "{}({})".format(self.__class__.__name__, self.data)
+        return "Tensor({}, op={})".format(self.data, self.__class__.__name__)
 
 
 class BinaryOperator(Tensor):
     '''
-    二元运算算子的基类，将一个一元函数抽象成类
+    二元运算算子的基类，将一个二元函数抽象成类
+
+    Example
+    -------
+    >>> add(BinaryOperator):
+            def forward(self, x: Tensor, y: Tensor):
+                return x.data + y.data
+            def grad_fn(self, node: Tensor, grad: np.ndarray):
+                return np.ones(self.shape) * grad
+    >>> x = Tensor(1.)
+    >>> y = Tensor(2.)
+    >>> z = add(x, y)
     '''
     def __init__(self, x: Tensor, y: Tensor) -> None:
         if not isinstance(x, Tensor):
@@ -428,13 +444,47 @@ class BinaryOperator(Tensor):
         y.build_edge(self)
 
     def forward(self, x: Tensor, y: Tensor) -> np.ndarray:
-        pass
+        '''前向传播函数，参数为Tensor，返回的是NumPy数组'''
+        raise NotImplementedError
 
     def grad_fn(self, x: Tensor, grad) -> np.ndarray:
-        pass
+        '''
+        反向传播函数，参数为下游节点，从上游流入该节点梯度。
+        注："上游"和"下游"针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.
+
+        x : Tensor
+            下游节点
+        grad : ndarray
+            上游流入该节点的梯度
+        '''
+        raise NotImplementedError
 
     def __repr__(self) -> str:
-        return "{}({})".format(self.__class__.__name__, self.data)
+        return "Tensor({}, op={})".format(self.data, self.__class__.__name__)
+
+
+class MultiOperator(Tensor):
+    '''多元运算算子基类'''
+    def __init__(self, *tensors) -> None:
+        requires_grad = False
+        tensors = list(tensors)
+        for i in range(len(tensors)):
+            if not isinstance(tensors[i], Tensor):
+                tensors[i] = Tensor(tensors[i])
+            requires_grad = requires_grad or tensors[i].requires_grad
+
+        super().__init__(self.forward(*tensors), requires_grad=requires_grad)
+        for i in range(len(tensors)):
+            tensors[i].build_edge(self)
+
+    def forward(self, *tensors) -> np.ndarray:
+        raise NotImplementedError
+
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
+        raise NotImplementedError
+
+    def __repr__(self) -> str:
+        return "Tensor({}, op={})".format(self.data, self.__class__.__name__)
 
 
 class add(BinaryOperator):
@@ -479,11 +529,9 @@ class mul(BinaryOperator):
 
     Example
     -------
-    ```python
-    x = Tensor([1., 2.])
-    y = Tensor([2., 3.])
-    z = mul(x, y) # [2, 6]
-    ```
+    >>> x = Tensor([1., 2.])
+    >>> y = Tensor([2., 3.])
+    >>> z = mul(x, y) # [2, 6]
 
     See also
     --------
@@ -536,7 +584,7 @@ class pow(BinaryOperator):
     def forward(self, x: Tensor, y: Tensor):
         return x.data**y.data
 
-    def grad_fn(self, node: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, node: Tensor, grad: np.ndarray) -> np.ndarray:
         if node is self.last[0]:
             return (self.data * self.last[1].data / node.data) * grad
         else:
@@ -547,9 +595,7 @@ class matmul(BinaryOperator):
     '''
     矩阵乘法算子，在Tensor类中进行重载，张量的矩阵乘法遵从NumPy Matmul的规则.
 
-    Reference
-    ---------
-    https://welts.xyz/2022/04/26/broadcast/
+    参考 : https://welts.xyz/2022/04/26/broadcast/
 
     See also
     --------
@@ -561,7 +607,7 @@ class matmul(BinaryOperator):
     def forward(self, x: Tensor, y: Tensor) -> np.ndarray:
         return x.data @ y.data
 
-    def grad_fn(self, node: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, node: Tensor, grad: np.ndarray) -> np.ndarray:
         if node is self.last[0]:
             if self.last[1].ndim == 1:
                 return np.expand_dims(grad, -1) @ np.expand_dims(
@@ -593,7 +639,7 @@ class abs(UnaryOperator):
     def forward(self, x: Tensor) -> np.ndarray:
         return np.abs(x)
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         mask = np.zeros(x.shape)
         mask[x > 0] = 1.
         mask[x < 0] = -1.
@@ -613,14 +659,13 @@ class sum(UnaryOperator):
 
     Example
     -------
-    ```python
-    x = Tensor(
-        [[1, 2, 3],
-        [4, 5, 6]]
-    )
-    s1 = x.sum(0) # [5, 7, 9]
-    s2 = x.sum(1) # [6, 15]
-    s3 = sum(x, keepdims=True) # [[21]]
+    >>> x = Tensor(
+            [[1, 2, 3],
+            [4, 5, 6]]
+        )
+    >>> s1 = x.sum(0) # [5, 7, 9]
+    >>> s2 = x.sum(1) # [6, 15]
+    >>> s3 = sum(x, keepdims=True) # [[21]]
     ```
     '''
     def __init__(self, x: Tensor, axis=None, keepdims=False) -> None:
@@ -631,7 +676,7 @@ class sum(UnaryOperator):
     def forward(self, x: Tensor) -> np.ndarray:
         return np.sum(x.data, axis=self.axis, keepdims=self.keepdims)
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if not (self.axis is None or self.keepdims):
             grad = np.expand_dims(grad, axis=self.axis)
         return np.ones(x.shape) * grad
@@ -660,7 +705,7 @@ class mean(UnaryOperator):
     def forward(self, x: Tensor) -> np.ndarray:
         return np.mean(x.data, axis=self.axis, keepdims=self.keepdims)
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if not (self.axis is None or self.keepdims):
             grad = np.expand_dims(grad, axis=self.axis)
         return np.ones(x.shape) * grad * self.data.size / x.data.size
@@ -689,7 +734,7 @@ class max(UnaryOperator):
     def forward(self, x: Tensor) -> np.ndarray:
         return np.max(x.data, axis=self.axis, keepdims=self.keepdims)
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if self.keepdims:
             full_dim_y = self.data
         else:
@@ -716,7 +761,7 @@ class reshape(UnaryOperator):
     def forward(self, x: Tensor) -> np.ndarray:
         return x.data.reshape(self.new_shape)
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         return grad.reshape(x.shape)
 
 
@@ -736,7 +781,7 @@ class transpose(UnaryOperator):
     def forward(self, x: Tensor) -> np.ndarray:
         return x.data.transpose(self.axes)
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if self.axes is None:
             return grad.transpose()
         return grad.transpose(np.argsort(self.axes))
@@ -769,7 +814,7 @@ class get_slice(UnaryOperator):
     def forward(self, x: Tensor) -> np.ndarray:
         return x.data[self.key]
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         full_grad = np.zeros(x.shape)
         full_grad[self.key] = grad
         return full_grad
@@ -777,23 +822,70 @@ class get_slice(UnaryOperator):
 
 # 一些包装的特殊矩阵
 def zeros(shape, requires_grad=False):
+    '''全零张量
+    
+    Parameters
+    ----------
+    shape : 
+        张量形状
+    require_grad : bool, default=False
+        是否需要求导
+    '''
     return Tensor(np.zeros(shape), requires_grad=requires_grad)
 
 
 def ones(shape, requires_grad=False):
+    '''全1张量
+    
+    Parameters
+    ----------
+    shape : 
+        张量形状
+    require_grad : bool, default=False
+        是否需要求导
+    '''
     return Tensor(np.ones(shape), requires_grad=requires_grad)
 
 
 def randn(*shape, requires_grad=False):
+    '''0-1正态分布张量
+    
+    Parameters
+    ----------
+    *shape : 
+        张量形状
+    require_grad : bool, default=False
+        是否需要求导
+    '''
     return Tensor(np.random.randn(*shape), requires_grad=requires_grad)
 
 
 def rand(*shape, requires_grad=False):
+    '''[0, 1)均匀分布张量
+    
+    Parameters
+    ----------
+    *shape : 
+        张量形状
+    require_grad : bool, default=False
+        是否需要求导
+    '''
     return Tensor(np.random.rand(*shape), requires_grad=requires_grad)
 
 
-def uniform(low, high, shape=None, requires_grad=False):
-    return Tensor(
-        np.random.uniform(low, high, size=shape),
-        requires_grad=requires_grad,
-    )
+def uniform(low: float, high: float, shape=None, requires_grad=False):
+    '''均匀分布张量
+    
+    Parameters
+    ----------
+    low : float
+        均匀分布下界;
+    high : float
+        均匀分布下界;
+    *shape : 
+        张量形状
+    require_grad : bool, default=False
+        是否需要求导
+    '''
+    return Tensor(np.random.uniform(low, high, size=shape),
+                  requires_grad=requires_grad)
