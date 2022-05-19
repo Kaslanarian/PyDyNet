@@ -502,7 +502,7 @@ class add(BinaryOperator):
         return x.data + y.data
 
     def grad_fn(self, node: Tensor, grad: np.ndarray):
-        return np.ones(self.shape) * grad
+        return grad[...]
 
 
 class sub(BinaryOperator):
@@ -517,10 +517,9 @@ class sub(BinaryOperator):
         return x.data - y.data
 
     def grad_fn(self, node: Tensor, grad: np.ndarray):
-        grad_out = np.ones(self.shape) * grad
         if node is self.last[0]:
-            return grad_out
-        return -grad_out
+            return grad[...]
+        return -grad
 
 
 class mul(BinaryOperator):

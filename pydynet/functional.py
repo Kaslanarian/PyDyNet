@@ -1,3 +1,4 @@
+from ast import Str
 from .tensor import Tensor, UnaryOperator
 from .tensor import add, sub, mul, div, matmul, abs, sum, mean, max, reshape, transpose
 import numpy as np
@@ -118,27 +119,25 @@ class __im2col1d(UnaryOperator):
         self.kernel_size = kernel_size
         self.stride = stride
         self.n_output = (self.n_features - self.kernel_size) // stride + 1
+        self.size = x.data.itemsize
         super().__init__(x)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        col = np.zeros((
-            self.N,
-            self.in_channels,
-            self.kernel_size,
-            self.n_output,
-        ))
-        for i in range(self.kernel_size):
-            i_max = i + self.n_output * self.stride
-            col[..., i, :] = x.data[..., i:i_max:self.stride]
-        return col
+        return np.lib.stride_tricks.as_strided(
+            x,
+            shape=(self.N, self.in_channels, self.n_output, self.kernel_size),
+            strides=(self.size * self.in_channels * self.n_features,
+                     self.size * self.n_features, self.size * self.stride,
+                     self.size),
+        )
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
-        grad_col = grad
-        grad_x = np.zeros((self.N, self.in_channels, self.n_features))
-        for i in range(self.kernel_size):
-            i_max = i + self.n_output * self.stride
-            grad_x[..., i:i_max:self.stride] = grad_col[..., i, :]
-        return grad_x
+        return np.lib.stride_tricks.as_strided(
+            grad,
+            shape=x.shape,
+            strides=(self.in_channels * self.n_features * self.size,
+                     self.n_features * self.size, self.size),
+        )
 
 
 class __pad1d(UnaryOperator):
@@ -147,11 +146,8 @@ class __pad1d(UnaryOperator):
         super().__init__(x)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        return np.pad(
-            x.data,
-            [(0, 0), (0, 0), (self.pad_width, self.pad_width)],
-            'constant',
-        )
+        return np.pad(x.data, [(0, 0), (0, 0),
+                               (self.pad_width, self.pad_width)], 'constant')
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if self.pad_width == 0:
@@ -175,15 +171,10 @@ def conv1d(x: Tensor, kernel: Tensor, padding: int = 0, stride: int = 1):
     stride : int, default=1
         卷积步长.
     '''
-    N, _, _ = x.shape
-    out_channels, _, kernel_size = kernel.shape
+    kernel_size = kernel.shape[-1]
     pad_x = __pad1d(x, padding)
     col = __im2col1d(pad_x, kernel_size, stride)
-    n_output = col.shape[-1]
-    col = col.transpose(0, 3, 1, 2).reshape(N * n_output, -1)
-    col_filter = kernel.reshape(out_channels, -1).T
-    out = col @ col_filter
-    return out.reshape(N, n_output, -1).transpose(0, 2, 1)
+    return (col @ kernel.transpose(1, 2, 0)).sum(1).transpose(0, 2, 1)
 
 
 def max_pool1d(x: Tensor, kernel_size: int, stride: int, padding=0):
@@ -202,14 +193,9 @@ def max_pool1d(x: Tensor, kernel_size: int, stride: int, padding=0):
     padding : int, default=0
         对输入特征两边补0数量.
     '''
-    N, out_channels, _ = x.shape
     pad_x = __pad1d(x, padding)
     col = __im2col1d(pad_x, kernel_size, stride)
-    n_output = col.shape[-1]
-    col = col.transpose(0, 3, 1, 2).reshape(-1, kernel_size)
-    out = max(col, axis=1)
-    out = out.reshape(N, n_output, out_channels).transpose(0, 2, 1)
-    return out
+    return col.max(-1)
 
 
 class __im2col2d(UnaryOperator):
@@ -252,12 +238,9 @@ class __pad2d(UnaryOperator):
         super().__init__(x)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        return np.pad(
-            x.data,
-            [(0, 0), (0, 0), (self.pad_width, self.pad_width),
-             (self.pad_width, self.pad_width)],
-            'constant',
-        )
+        return np.pad(x.data, [(0, 0), (0, 0),
+                               (self.pad_width, self.pad_width),
+                               (self.pad_width, self.pad_width)], 'constant')
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if self.pad_width == 0:
@@ -386,7 +369,7 @@ def cross_entropy_loss(y_pred, y_true, reduction='mean'):
     '''交叉熵损失'''
     update_y_pred = y_pred - np.max(y_pred.data)
     log_sum_exp = log(sum(exp(update_y_pred), 1, keepdims=True))
-    nll = -(update_y_pred - log_sum_exp) * y_true
+    nll = (log_sum_exp - update_y_pred) * y_true
     if reduction == 'mean':
         return mean(nll)
     elif reduction == 'sum':
