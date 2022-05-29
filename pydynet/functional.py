@@ -119,25 +119,24 @@ class __im2col1d(UnaryOperator):
         self.kernel_size = kernel_size
         self.stride = stride
         self.n_output = (self.n_features - self.kernel_size) // stride + 1
-        self.size = x.data.itemsize
         super().__init__(x)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        return np.lib.stride_tricks.as_strided(
-            x,
-            shape=(self.N, self.in_channels, self.n_output, self.kernel_size),
-            strides=(self.size * self.in_channels * self.n_features,
-                     self.size * self.n_features, self.size * self.stride,
-                     self.size),
-        )
+        col = np.zeros((self.N, self.in_channels, self.n_output,self.kernel_size))
+
+        for i in range(self.kernel_size):
+            i_max = i + self.n_output * self.stride
+            col[..., i] = x.data[..., i:i_max:self.stride]
+        
+        return col
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
-        return np.lib.stride_tricks.as_strided(
-            grad,
-            shape=x.shape,
-            strides=(self.in_channels * self.n_features * self.size,
-                     self.n_features * self.size, self.size),
-        )
+        grad_x = np.zeros((self.N, self.in_channels, self.n_features))
+        for i in range(self.kernel_size):
+            i_max = i + self.n_output * self.stride
+            grad_x[..., i:i_max:self.stride] += grad[..., i]
+
+        return grad_x
 
 
 class __pad1d(UnaryOperator):

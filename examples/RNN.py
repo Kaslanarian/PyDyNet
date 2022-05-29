@@ -2,7 +2,7 @@ from pydynet.tensor import Tensor
 import pydynet.functional as F
 import pydynet.nn as nn
 from pydynet.optimizer import Adam
-from pydynet.dataloader import train_loader
+from pydynet.util import train_loader
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -55,17 +55,13 @@ optim = Adam(net.parameters(), lr=0.01)
 loss = nn.CrossEntropyLoss()
 EPOCHES = 50
 BATCH_SIZE = 32
+loader = train_loader(train_X, train_y, BATCH_SIZE, True)
 
 loss_list, train_acc, test_acc = [], [], []
 
 for epoch in range(EPOCHES):
     net.train()
-    for batch_X, batch_y in train_loader(
-            train_X,
-            train_y,
-            batch_size=BATCH_SIZE,
-            shuffle=True,
-    ):
+    for batch_X, batch_y in loader:
         output = net(Tensor(batch_X))
         l = loss(output, batch_y)
         optim.zero_grad()

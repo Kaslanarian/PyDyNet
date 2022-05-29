@@ -4,9 +4,11 @@
 
 ## Update
 
-- 5.10:修改损失函数的定义方式：加入reduction机制，加入Embedding;
-- 5.15:重构了RNN, LSTM和GRU，支持双向;
-- 5.16:允许PyDyNet作为第三方库安装；开始手册的撰写(基于Sphinx).
+- 5.10: ver 0.0.1 修改损失函数的定义方式：加入reduction机制，加入Embedding;
+- 5.15: ver 0.0.2 重构了RNN, LSTM和GRU，支持双向;
+- 5.16: ver 0.0.2 允许PyDyNet作为第三方库安装；开始手册的撰写(基于Sphinx).
+- 5.29: ver 0.0.3 加入了Dataset和Dataloader，现在可以像PyTorch一样定义数据集和分割数据集，具体参考[util.py](/pydynet/util.py)中的`train_loader`函数；
+- 5.30: ver 0.0.3 将一维卷积算法退化成基于循环的im2col，新版本NumPy似乎不是很支持strided上数组的魔改；
 - ...
 
 ## Overview
@@ -15,21 +17,33 @@ PyDyNet也是纯NumPy实现的神经网络，语法受PyTorch的启发，大致�
 
 ```mermaid
 graph BT
-	N ----> Data(DataLoader)
-	N(numpy.ndarray) --> A(Tensor)
-	A --Eager execution--> B(Basic operators: add, exp, etc)
-	B --> E(Mechanism: Dropout, BN, etc)
-	E --> D
-	B --> C(Complex operators: softmax, etc)
-	C --> E
-	B --> D(Base Module:Linear, Conv2d, etc)
-	C --> D
-	B --Autograd--> A
-	N ----> GD(Optimizer:SGD, Adam, etc)
-	D --> M(Module:DNN, CNN, RNN, etc)
-	M --> Mission(PyDyNet)
-	Data --> Mission
-	GD --> Mission
+   N ----> Dataset ----> Data(DataLoader)
+   N(numpy.ndarray) --> A(Tensor)
+   A --Eager execution--> B(Basic operators: add, exp, etc)
+   B --> E(Mechanism: Dropout, BN, etc)
+   E --> D
+   B --> C(Complex operators: softmax, etc)
+   C --> E
+   B --> D(Base Module:Linear, Conv2d, etc)
+   C --> D
+   B --Autograd--> A
+   N ----> GD(Optimizer:SGD, Adam, etc)
+   D --> M(Module:DNN, CNN, RNN, etc)
+   M --> Mission(PyDyNet)
+   Data --> Mission
+   GD --> Mission
+```
+
+文件结构
+
+```bash
+pydynet
+├── __init__.py     
+├── functional.py # 高阶的函数算子
+├── nn.py         # 神经网络层
+├── optimizer.py  # 优化器类
+├── tensor.py     # 张量结构，包括基础的函数算子
+└── util.py       # 数据集处理，包括Dataset和Dataloader
 ```
 
 我们实现了：
@@ -107,7 +121,8 @@ graph BT
 6. 实现了多种优化器(`optimizer.py`)，以及数据分批的接口(`dataloader.py`)，从而实现神经网络的训练；其中优化器和PyTorch一样支持权值衰减，即正则化；
 7. Dropout机制，Batch Normalization机制，以及将网络划分成训练阶段和评估阶段；
 8. 基于im2col高效实现Conv1d, Conv2d, max_pool1d和max_pool2d，从而实现CNN；
-9. 支持多层的**双向**RNN，LSTM和GRU。
+9. 支持多层的**双向**RNN，LSTM和GRU；
+10. 实现了PyTorch中的Dataset类、DataLoader类，从而将批数据集封装成迭代器。
 
 ## Install
 

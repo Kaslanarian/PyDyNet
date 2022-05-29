@@ -9,7 +9,7 @@ from pydynet.tensor import Tensor
 import pydynet.functional as F
 import pydynet.nn as nn
 from pydynet.optimizer import Adam
-from pydynet.dataloader import train_loader
+from pydynet.util import train_loader
 
 try:
     import seaborn as sns
@@ -17,7 +17,7 @@ try:
 except:
     pass
 
-np.random.seed(0)
+np.random.seed(42)
 
 data_X, data_y = fetch_olivetti_faces(return_X_y=True)
 data_y = OneHotEncoder(sparse=False).fit_transform(data_y.reshape(-1, 1))
@@ -76,6 +76,9 @@ class CNN2d(nn.Module):
 net1 = DNN()
 net2 = CNN1d()
 net3 = CNN2d()
+print(net1)
+print(net2)
+print(net3)
 optim1 = Adam(net1.parameters(), lr=0.01)
 optim2 = Adam(net2.parameters(), lr=0.01)
 optim3 = Adam(net3.parameters(), lr=0.01)
@@ -86,17 +89,14 @@ loss_list1, loss_list2, loss_list3 = [], [], []
 train_acc1, train_acc2, train_acc3 = [], [], []
 test_acc1, test_acc2, test_acc3 = [], [], []
 
+loader = train_loader(train_X, train_y, BATCH_SIZE, True)
+
 for epoch in range(EPOCHES):
     # 相同数据训练3个网络
     net1.train()
     net2.train()
     net3.train()
-    for batch_X, batch_y in train_loader(
-            train_X,
-            train_y,
-            batch_size=BATCH_SIZE,
-            shuffle=True,
-    ):
+    for batch_X, batch_y in loader:
         node_y = Tensor(batch_y)
 
         output1 = net1(Tensor(batch_X))

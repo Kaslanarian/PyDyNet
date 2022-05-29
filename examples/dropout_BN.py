@@ -9,7 +9,7 @@ from pydynet.tensor import Tensor
 import pydynet.functional as F
 import pydynet.nn as nn
 from pydynet.optimizer import Adam
-from pydynet.dataloader import train_loader
+from pydynet.util import train_loader
 
 try:
     import seaborn as sns
@@ -75,6 +75,9 @@ optim3 = Adam(net3.parameters(), lr=0.01)
 loss = nn.CrossEntropyLoss()
 EPOCHES = 50
 BATCH_SIZE = 32
+
+loader = train_loader(train_X, train_y, BATCH_SIZE, True)
+
 loss_list1, loss_list2, loss_list3 = [], [], []
 train_acc1, train_acc2, train_acc3 = [], [], []
 test_acc1, test_acc2, test_acc3 = [], [], []
@@ -84,12 +87,7 @@ for epoch in range(EPOCHES):
     net1.train()
     net2.train()
     net3.train()
-    for batch_X, batch_y in train_loader(
-            train_X,
-            train_y,
-            batch_size=BATCH_SIZE,
-            shuffle=True,
-    ):
+    for batch_X, batch_y in loader:
         node_y = Tensor(batch_y)
 
         output1 = net1(Tensor(batch_X))

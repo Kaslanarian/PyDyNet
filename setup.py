@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='pydynet',
-    version='0.0.2',
+    version='0.0.3',
     description=
     'Neuron network(DNN, CNN, RNN, etc) implementation using Numpy based on autodiff',
     author_email="191300064@smail.nju.edu.cn",

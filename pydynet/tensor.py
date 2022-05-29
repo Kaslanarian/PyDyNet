@@ -149,7 +149,7 @@ class Tensor:
         return reshape(self, new_shape)
 
     def transpose(self, *axes):
-        return transpose(self, axes)
+        return transpose(self, axes if len(axes) != 0 else None)
 
     def max(self, axis=None):
         return max(self, axis)
@@ -371,6 +371,13 @@ class Tensor:
     def zero_grad(self):
         '''梯度归零'''
         self.grad = np.zeros(self.shape)
+
+    def numpy(self)->np.ndarray:
+        '''返回Tensor的内部数据，即NumPy数组(拷贝)'''
+        return self.data.copy()
+
+    def item(self):
+        return self.data.item()
 
 
 class UnaryOperator(Tensor):
