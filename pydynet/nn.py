@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import numpy as np
 from .tensor import Tensor, zeros, randn, uniform
-from .functional import mean as F_mean, square as F_square, sqrt as F_sqrt
+from .functional import sum as F_sum, mean as F_mean, square as F_square, sqrt as F_sqrt
 from .functional import conv1d as F_conv1d, conv2d as F_conv2d
 from .functional import max_pool1d as F_max_pool1d, max_pool2d as F_max_pool2d
 from .functional import concatenate as F_concatenate
@@ -23,7 +23,7 @@ class Module:
         self._parameters = OrderedDict()
 
     def forward(self, x) -> Tensor:
-        pass
+        raise NotImplementedError
 
     def __call__(self, *x) -> Tensor:
         return self.forward(*x)
@@ -494,7 +494,7 @@ class LSTM(Module):
                 f = sigma_fio[..., :self.hidden_size]
                 i = sigma_fio[..., self.hidden_size:2 * self.hidden_size]
                 o = sigma_fio[..., -self.hidden_size:]
-                c = F_mean(f * c + g * i, (0, 1))
+                c = F_sum(f * c + g * i, (0, 1))
                 h = o * F_tanh(c)
                 h_list.append(h)
 

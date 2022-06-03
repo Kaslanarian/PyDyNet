@@ -151,14 +151,14 @@ class Tensor:
     def transpose(self, *axes):
         return transpose(self, axes if len(axes) != 0 else None)
 
-    def max(self, axis=None):
-        return max(self, axis)
+    def max(self, axis=None, keepdims=False):
+        return max(self, axis, keepdims)
 
-    def mean(self, axis=None):
-        return mean(self, axis)
+    def mean(self, axis=None, keepdims=False):
+        return mean(self, axis, keepdims)
 
-    def sum(self, axis=None):
-        return sum(self, axis)
+    def sum(self, axis=None, keepdims=False):
+        return sum(self, axis, keepdims)
 
     def build_edge(self, node):
         '''构建两节点的有向边，正常不适用'''
@@ -293,12 +293,12 @@ class Tensor:
         return Tensor(self.data <= other)
 
     # 这里没有重载__eq__和__neq__是因为在RNN中这样的重载会引发问题
-    def equal(self, other):
+    def eq(self, other):
         if isinstance(other, Tensor):
             other = other.data
         return Tensor(self.data == other)
 
-    def inequal(self, other):
+    def ne(self, other):
         if isinstance(other, Tensor):
             other = other.data
         return Tensor(self.data != other)
@@ -372,7 +372,7 @@ class Tensor:
         '''梯度归零'''
         self.grad = np.zeros(self.shape)
 
-    def numpy(self)->np.ndarray:
+    def numpy(self) -> np.ndarray:
         '''返回Tensor的内部数据，即NumPy数组(拷贝)'''
         return self.data.copy()
 
@@ -739,6 +739,39 @@ class max(UnaryOperator):
 
     def forward(self, x: Tensor) -> np.ndarray:
         return np.max(x.data, axis=self.axis, keepdims=self.keepdims)
+
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
+        if self.keepdims:
+            full_dim_y = self.data
+        else:
+            # 还原维度
+            full_dim_y = np.expand_dims(self.data, axis=self.axis)
+            grad = np.expand_dims(grad, axis=self.axis)
+        return (full_dim_y == x.data).astype(float) * grad
+
+
+class min(UnaryOperator):
+    '''
+    求最小值算子，在Tensor类中扩展为类方法
+
+    Parameters
+    ----------
+    axis : None
+        求最大值方向(轴)
+    keepdims : bool, default=False
+        是否保留原来维度
+
+    See also
+    --------
+    max : 求最大值算子
+    '''
+    def __init__(self, x: Tensor, axis=None, keepdims=False) -> None:
+        self.axis = axis
+        self.keepdims = keepdims
+        super().__init__(x)
+
+    def forward(self, x: Tensor) -> np.ndarray:
+        return np.min(x.data, axis=self.axis, keepdims=self.keepdims)
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if self.keepdims:

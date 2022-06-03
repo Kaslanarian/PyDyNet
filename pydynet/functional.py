@@ -1,5 +1,5 @@
 from ast import Str
-from .tensor import Tensor, UnaryOperator
+from .tensor import BinaryOperator, Tensor, UnaryOperator
 from .tensor import add, sub, mul, div, matmul, abs, sum, mean, max, reshape, transpose
 import numpy as np
 
@@ -34,6 +34,22 @@ class log(UnaryOperator):
         return grad / x.data
 
 
+class maximum(BinaryOperator):
+    def forward(self, x: Tensor, y: Tensor) -> np.ndarray:
+        return np.maximum(x.data, y.data)
+
+    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+        return (self.data == x.data) * grad
+
+
+class minimum(BinaryOperator):
+    def forward(self, x: Tensor, y: Tensor) -> np.ndarray:
+        return np.minimum(x, y)
+
+    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+        return (self.data == x) * grad
+
+
 class sigmoid(UnaryOperator):
     '''Sigmoid运算，我们前向传播避免了溢出问题'''
     def forward(self, x: Tensor) -> np.ndarray:
@@ -58,35 +74,12 @@ class tanh(UnaryOperator):
         return (1 - self.data**2) * grad
 
 
-class relu(UnaryOperator):
-    '''ReLU运算
-    
-    :math:`\\text{relu}(x)=\\max(x, 0)`
-    '''
-    def forward(self, x: Tensor) -> np.ndarray:
-        return np.array([x.data, np.zeros(x.shape)]).max(0)
-
-    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
-        return grad * (x.data >= 0)
+def relu(x: Tensor):
+    return maximum(0., x)
 
 
-class leaky_relu(UnaryOperator):
-    '''LeakyReLU运算
-
-    :math:`\\text{leaky_relu}(x, \\alpha)=\\max(x, \\alpha x)`
-    '''
-    def __init__(self, x: Tensor, alpha: float) -> None:
-        self.alpha = alpha
-        super().__init__(x)
-
-    def forward(self, x: Tensor) -> np.ndarray:
-        return np.array([x.data, self.alpha * x.data]).max(0)
-
-    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
-        dlrelu = np.zeros(self.shape)
-        dlrelu[self.data >= 0] = 1.
-        dlrelu[self.data < 0] = self.alpha
-        return dlrelu * grad
+def leaky_relu(x: Tensor, alpha: float):
+    return maximum(x, alpha * x)
 
 
 def sqrt(x: Tensor):
@@ -122,12 +115,13 @@ class __im2col1d(UnaryOperator):
         super().__init__(x)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        col = np.zeros((self.N, self.in_channels, self.n_output,self.kernel_size))
+        col = np.zeros(
+            (self.N, self.in_channels, self.n_output, self.kernel_size))
 
         for i in range(self.kernel_size):
             i_max = i + self.n_output * self.stride
             col[..., i] = x.data[..., i:i_max:self.stride]
-        
+
         return col
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
@@ -179,7 +173,7 @@ def conv1d(x: Tensor, kernel: Tensor, padding: int = 0, stride: int = 1):
 def max_pool1d(x: Tensor, kernel_size: int, stride: int, padding=0):
     '''一维池化函数
 
-    基于im2col实现的一维池化.
+    基于im2col实现的一维池化.`
     
     Parameters
     ----------
