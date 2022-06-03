@@ -45,7 +45,7 @@ class DNN(nn.Module):
 class DNN_dropout(DNN):
     def __init__(self) -> None:
         super().__init__()
-        self.dropout = nn.Dropout(p=0.05)
+        self.dropout = nn.Dropout(p=0.1)
 
     def forward(self, x):
         x = F.sigmoid(self.dropout(self.fc1(x)))
