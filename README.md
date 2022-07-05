@@ -2,7 +2,6 @@
 
 <center>
 <img align="center" src="https://img.shields.io/github/forks/Kaslanarian/PyDyNet">
-<\center>
    
 前作：[PyNet: Use NumPy to build neuron network](https://github.com/Kaslanarian/PyNet)。在那里我们基于求导规则实现了全连接网络。在这里，我们向当今的深度学习框架看齐，实现属于自己的DL框架。
 
