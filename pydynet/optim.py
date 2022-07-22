@@ -28,11 +28,11 @@ class SGD:
         权重衰减系数.
     '''
     def __init__(self,
-                 params: tuple,
+                 params,
                  lr: float,
                  weight_decay: float = 0.) -> None:
         self.lr = lr
-        self.params = params
+        self.params = list(params)
         self.weight_devay = weight_decay
 
     def step(self):

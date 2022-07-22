@@ -11,11 +11,11 @@ try:
 except:
     pass
 
-from pydynet.tensor import Tensor
-import pydynet.functional as F
 import pydynet.nn as nn
-from pydynet.optimizer import Adam
-from pydynet.util import train_loader
+import pydynet.nn.functional as F
+from pydynet.optim import Adam
+from pydynet.data import data_loader
+from pydynet.tensor import Tensor
 
 np.random.seed(42)
 
@@ -43,9 +43,9 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(n_hidden, n_output)
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = F.relu(x)
-        return self.fc2(x)
+        fc = self.fc1(x)
+        relu = F.relu(fc)
+        return self.fc2(relu)
 
 
 net = Net()
@@ -55,7 +55,7 @@ loss = nn.CrossEntropyLoss()
 EPOCHES = 50
 BATCH_SIZE = 32
 
-loader = train_loader(train_X, train_y, BATCH_SIZE, True)
+loader = data_loader(train_X, train_y, BATCH_SIZE, True)
 
 loss_list, train_acc, test_acc = [], [], []
 

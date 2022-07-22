@@ -99,7 +99,7 @@ class DataLoader:
         return _DataLoaderIter(self)
 
 
-def train_loader(X, y, batch_size: int, shuffle: bool = False) -> list:
+def data_loader(X, y, batch_size: int, shuffle: bool = False) -> list:
     class TrainSet(Dataset):
         def __init__(self, X, y) -> None:
             self.data = X

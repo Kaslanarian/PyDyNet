@@ -1,8 +1,9 @@
+from tqdm import tqdm
 from pydynet.tensor import Tensor
-import pydynet.functional as F
+import pydynet.nn.functional as F
 import pydynet.nn as nn
-from pydynet.optimizer import Adam
-from pydynet.util import train_loader
+from pydynet.optim import Adam
+from pydynet.data import data_loader
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -55,11 +56,11 @@ optim = Adam(net.parameters(), lr=0.01)
 loss = nn.CrossEntropyLoss()
 EPOCHES = 50
 BATCH_SIZE = 32
-loader = train_loader(train_X, train_y, BATCH_SIZE, True)
+loader = data_loader(train_X, train_y, BATCH_SIZE, True)
 
 loss_list, train_acc, test_acc = [], [], []
 
-for epoch in range(EPOCHES):
+for epoch in tqdm(range(EPOCHES), desc="Training"):
     net.train()
     for batch_X, batch_y in loader:
         output = net(Tensor(batch_X))
@@ -81,13 +82,13 @@ for epoch in range(EPOCHES):
             np.argmax(net(Tensor(test_X)).data, axis=1),
             np.argmax(test_y, axis=1),
         ))
-    print("epoch {:3d}, train loss {:.6f}, train acc {:.4f}, test acc {:.4f}".
-          format(
-              epoch + 1,
-              loss_list[-1],
-              train_acc[-1] * 100,
-              test_acc[-1] * 100,
-          ))
+print(
+    "epoch {:3d}, train loss {:.6f}, train acc {:.4f}, test acc {:.4f}".format(
+        epoch + 1,
+        loss_list[-1],
+        train_acc[-1] * 100,
+        test_acc[-1] * 100,
+    ))
 
 plt.figure(figsize=(10, 5))
 plt.subplot(1, 2, 1)

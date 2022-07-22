@@ -1,4 +1,4 @@
-import pydynet.functional as F
+import pydynet
 from pydynet.tensor import Tensor
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,7 +16,7 @@ x_list = []
 y_list = []
 for i in range(20):
     x_list.append(x.data.copy())
-    y = F.log(F.square(x - 7) + 10)
+    y = pydynet.log(pydynet.square(x - 7) + 10)
     y_list.append(y.data)
     x.zero_grad()
     y.backward()

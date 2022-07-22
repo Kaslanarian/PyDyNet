@@ -6,10 +6,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 from pydynet.tensor import Tensor
-import pydynet.functional as F
+import pydynet.nn.functional as F
 import pydynet.nn as nn
-from pydynet.optimizer import Adam
-from pydynet.util import train_loader
+from pydynet.optim import Adam
+from pydynet.data import data_loader
 
 try:
     import seaborn as sns
@@ -45,7 +45,7 @@ class DNN(nn.Module):
 class DNN_dropout(DNN):
     def __init__(self) -> None:
         super().__init__()
-        self.dropout = nn.Dropout(p=0.1)
+        self.dropout = nn.Dropout(p=0.05)
 
     def forward(self, x):
         x = F.sigmoid(self.dropout(self.fc1(x)))
@@ -55,7 +55,7 @@ class DNN_dropout(DNN):
 class DNN_BN(DNN):
     def __init__(self) -> None:
         super().__init__()
-        self.bn = nn.BatchNorm(128)
+        self.bn = nn.BatchNorm1d(128)
 
     def forward(self, x):
         x = self.bn(self.fc1(x))
@@ -76,7 +76,7 @@ loss = nn.CrossEntropyLoss()
 EPOCHES = 50
 BATCH_SIZE = 32
 
-loader = train_loader(train_X, train_y, BATCH_SIZE, True)
+loader = data_loader(train_X, train_y, BATCH_SIZE, True)
 
 loss_list1, loss_list2, loss_list3 = [], [], []
 train_acc1, train_acc2, train_acc3 = [], [], []

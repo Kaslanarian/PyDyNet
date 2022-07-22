@@ -154,6 +154,9 @@ class Tensor:
     def max(self, axis=None, keepdims=False):
         return max(self, axis, keepdims)
 
+    def min(self, axis=None, keepdims=False):
+        return min(self, axis, keepdims)
+
     def mean(self, axis=None, keepdims=False):
         return mean(self, axis, keepdims)
 
@@ -401,7 +404,8 @@ class UnaryOperator(Tensor):
             self.forward(x),
             x.requires_grad,
         )
-        x.build_edge(self)
+        if self.requires_grad:
+            x.build_edge(self)
 
     def forward(self, x: Tensor) -> np.ndarray:
         '''前向传播函数，参数为Tensor，返回的是NumPy数组'''
@@ -447,8 +451,9 @@ class BinaryOperator(Tensor):
             self.forward(x, y),
             x.requires_grad or y.requires_grad,
         )
-        x.build_edge(self)
-        y.build_edge(self)
+        if self.requires_grad:
+            x.build_edge(self)
+            y.build_edge(self)
 
     def forward(self, x: Tensor, y: Tensor) -> np.ndarray:
         '''前向传播函数，参数为Tensor，返回的是NumPy数组'''
@@ -481,8 +486,9 @@ class MultiOperator(Tensor):
             requires_grad = requires_grad or tensors[i].requires_grad
 
         super().__init__(self.forward(*tensors), requires_grad=requires_grad)
-        for i in range(len(tensors)):
-            tensors[i].build_edge(self)
+        if self.requires_grad:
+            for i in range(len(tensors)):
+                tensors[i].build_edge(self)
 
     def forward(self, *tensors) -> np.ndarray:
         raise NotImplementedError
@@ -741,7 +747,7 @@ class max(UnaryOperator):
         return np.max(x.data, axis=self.axis, keepdims=self.keepdims)
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
-        if self.keepdims:
+        if self.keepdims or self.axis is None:
             full_dim_y = self.data
         else:
             # 还原维度
@@ -774,13 +780,69 @@ class min(UnaryOperator):
         return np.min(x.data, axis=self.axis, keepdims=self.keepdims)
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
-        if self.keepdims:
+        if self.keepdims or self.axis is None:
             full_dim_y = self.data
         else:
             # 还原维度
             full_dim_y = np.expand_dims(self.data, axis=self.axis)
             grad = np.expand_dims(grad, axis=self.axis)
         return (full_dim_y == x.data).astype(float) * grad
+
+
+class exp(UnaryOperator):
+    '''指数运算
+    
+    Example
+    -------
+    >>> x = Tensor(1.)
+    >>> y = exp(x)
+    '''
+    def forward(self, x: Tensor):
+        return np.exp(x.data)
+
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
+        return self.data * grad
+
+
+class log(UnaryOperator):
+    '''对数运算
+    
+    Example
+    -------
+    >>> x = Tensor(1.)
+    >>> y = log(x)
+    '''
+    def forward(self, x: Tensor):
+        return np.log(x.data)
+
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
+        return grad / x.data
+
+
+class maximum(BinaryOperator):
+    def forward(self, x: Tensor, y: Tensor) -> np.ndarray:
+        return np.maximum(x.data, y.data)
+
+    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+        return (self.data == x.data) * grad
+
+
+class minimum(BinaryOperator):
+    def forward(self, x: Tensor, y: Tensor) -> np.ndarray:
+        return np.minimum(x, y)
+
+    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+        return (self.data == x) * grad
+
+
+def sqrt(x: Tensor):
+    '''平方根函数'''
+    return x**0.5
+
+
+def square(x: Tensor):
+    '''平方函数'''
+    return x * x
 
 
 # 非计算函数
@@ -859,6 +921,45 @@ class get_slice(UnaryOperator):
         return full_grad
 
 
+class concatenate(Tensor):
+    '''对多个张量进行连接，用法类似于`numpy.concatenate`
+    
+    Parameters
+    ----------
+    *tensors : 
+        待连接的张量：
+    axis : default=0
+        连接轴，默认是沿着第一个轴拼接.
+    '''
+    def __init__(self, *tensors, axis=0) -> None:
+        requires_grad = False
+        self.tensors = list(tensors)
+        self.axis = axis
+        self.indices = [0]
+        for i in range(len(self.tensors)):
+            if not isinstance(tensors[i], Tensor):
+                self.tensors[i] = Tensor(tensors[i])
+            requires_grad = requires_grad or self.tensors[i].requires_grad
+            self.indices.append(self.indices[-1] +
+                                self.tensors[i].shape[self.axis])
+
+        super().__init__(self.forward(), requires_grad=requires_grad)
+        if self.requires_grad:
+            for i in range(len(self.tensors)):
+                self.tensors[i].build_edge(self)
+
+    def forward(self):
+        return np.concatenate([t.data for t in self.tensors], axis=self.axis)
+
+    def grad_fn(self, x, grad: np.ndarray):
+        x_id = self.tensors.index(x)
+        start = self.indices[x_id]
+        end = self.indices[x_id + 1]
+        slc = [slice(None)] * len(grad.shape)
+        slc[self.axis] = slice(start, end)
+        return grad[tuple(slc)]
+
+
 # 一些包装的特殊矩阵
 def zeros(shape, requires_grad=False):
     '''全零张量
@@ -928,3 +1029,7 @@ def uniform(low: float, high: float, shape=None, requires_grad=False):
     '''
     return Tensor(np.random.uniform(low, high, size=shape),
                   requires_grad=requires_grad)
+
+
+def empty(shape, requires_grad=False):
+    return Tensor(np.empty(shape), requires_grad=requires_grad)

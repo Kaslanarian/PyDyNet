@@ -6,10 +6,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 from pydynet.tensor import Tensor
-import pydynet.functional as F
+import pydynet.nn.functional as F
 import pydynet.nn as nn
-from pydynet.optimizer import Adam
-from pydynet.util import train_loader
+from pydynet.optim import Adam
+from pydynet.data import data_loader
 
 try:
     import seaborn as sns
@@ -89,8 +89,11 @@ loss_list1, loss_list2, loss_list3 = [], [], []
 train_acc1, train_acc2, train_acc3 = [], [], []
 test_acc1, test_acc2, test_acc3 = [], [], []
 
-loader = train_loader(train_X, train_y, BATCH_SIZE, True)
+loader = data_loader(train_X, train_y, BATCH_SIZE, True)
 
+from time import time
+
+t = time()
 for epoch in range(EPOCHES):
     # 相同数据训练3个网络
     net1.train()
@@ -179,6 +182,7 @@ for epoch in range(EPOCHES):
                   train_acc3[-1] * 100,
                   test_acc3[-1] * 100,
               ))
+print(time() - t)
 
 plt.figure(figsize=(10, 5))
 plt.subplot(1, 2, 1)

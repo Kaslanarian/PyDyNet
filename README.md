@@ -2,13 +2,16 @@
 
 前作：[PyNet: Use NumPy to build neuron network](https://github.com/Kaslanarian/PyNet)。在那里我们基于求导规则实现了全连接网络。在这里，我们向当今的深度学习框架看齐，实现属于自己的DL框架。
 
+**PyDyNet已被多个技术公众号和社区分享**：[居然用Numpy实现了一个深度学习框架](https://segmentfault.com/a/1190000042108301).
+
 ## Update
 
 - 5.10: ver 0.0.1 修改损失函数的定义方式：加入reduction机制，加入Embedding;
 - 5.15: ver 0.0.2 重构了RNN, LSTM和GRU，支持双向;
 - 5.16: ver 0.0.2 允许PyDyNet作为第三方库安装；开始手册的撰写(基于Sphinx).
-- 5.29: ver 0.0.3 加入了Dataset和Dataloader，现在可以像PyTorch一样定义数据集和分割数据集，具体参考[util.py](/pydynet/util.py)中的`train_loader`函数；
+- 5.29: ver 0.0.3 加入了Dataset和Dataloader，现在可以像PyTorch一样定义数据集和分割数据集，具体参考[data.py](/pydynet/data.py)中的`train_loader`函数；
 - 5.30: ver 0.0.3 将一维卷积算法退化成基于循环的im2col，新版本NumPy似乎不是很支持strided上数组的魔改；
+- 7.22: ver 0.0.4 增加了Module类和Parameter类，将模块重组、增加多种Pytorch支持的初始化方式；正在撰写新的Manual；
 - ...
 
 ## Overview
@@ -38,12 +41,25 @@ graph BT
 
 ```bash
 pydynet
-├── __init__.py     
-├── functional.py # 高阶的函数算子
-├── nn.py         # 神经网络层
-├── optimizer.py  # 优化器类
-├── tensor.py     # 张量结构，包括基础的函数算子
-└── util.py       # 数据集处理，包括Dataset和Dataloader
+├── __init__.py
+├── data.py           # 数据集模块
+├── nn                # 神经网络模块
+│   ├── __init__.py   
+│   ├── functional.py # 函数类
+│   ├── init.py       # 初始化模块
+│   ├── modules
+│   │   ├── __init__.py
+│   │   ├── activation.py # 激活函数
+│   │   ├── batchnorm.py  # BN
+│   │   ├── conv.py       # 卷积和池化
+│   │   ├── dropout.py    # dropout
+│   │   ├── linear.py     # 线性层
+│   │   ├── loss.py       # 损失函数类
+│   │   ├── module.py     # Module基类，包括Sequential
+│   │   └── rnn.py        # RNN
+│   └── parameter.py      # 参数化类
+├── optim.py              # 优化器类
+└── tensor.py             # 张量类
 ```
 
 我们实现了：
@@ -122,7 +138,8 @@ pydynet
 7. Dropout机制，Batch Normalization机制，以及将网络划分成训练阶段和评估阶段；
 8. 基于im2col高效实现Conv1d, Conv2d, max_pool1d和max_pool2d，从而实现CNN；
 9. 支持多层的**双向**RNN，LSTM和GRU；
-10. 实现了PyTorch中的Dataset类、DataLoader类，从而将批数据集封装成迭代器。
+10. 实现了PyTorch中的Dataset类、DataLoader类，从而将批数据集封装成迭代器；
+11. 多种初始化方式，包括Kaiming和Xavier。
 
 ## Install
 
@@ -132,7 +149,7 @@ cd PyDyNet
 python setup.py install
 ```
 
-安装成功后就可以跑下面的例子
+安装成功后就可以运行下面的例子
 
 ## Example
 
