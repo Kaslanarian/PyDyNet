@@ -153,17 +153,17 @@ python setup.py install
 
 ## Example
 
-examples中是一些例子。
+[tests](./tests)中是一些例子。
 
 ### AutoDiff
 
-[autodiff.py](examples/autodiff.py)利用自动微分，对一个凸函数进行梯度下降：
+[autodiff.py](tests/autodiff.py)利用自动微分，对一个凸函数进行梯度下降：
 
 ![ad](src/autodiff.png)
 
 ### DNN
 
-[DNN.py](examples/DNN.py)使用全连接网络对`sklearn`提供的数字数据集进行分类，训练参数
+[DNN.py](tests/DNN.py)使用全连接网络对`sklearn`提供的数字数据集进行分类，训练参数
 
 - 网络结构：Linear(64->64) + Sigmoid + Linear(64->10)；
 - 损失函数：Cross Entropy Loss；
@@ -177,7 +177,7 @@ examples中是一些例子。
 
 ### CNN
 
-[CNN.py](example/CNN.py)使用三种网络对`fetch_olivetti_faces`人脸(64×64)数据集进行分类并进行性能对比：
+[CNN.py](tests/CNN.py)使用三种网络对`fetch_olivetti_faces`人脸(64×64)数据集进行分类并进行性能对比：
 
 1. Linear + Sigmoid + Linear;
 2. Conv1d + MaxPool1d + Linear + ReLU + Linear;
@@ -196,7 +196,7 @@ examples中是一些例子。
 
 ## Droput & BN
 
-[dropout_BN.py](example/dropout_BN.py)使用三种网络对`fetch_olivetti_faces`人脸(64×64)数据集进行分类并进行性能对比：
+[dropout_BN.py](tests/dropout_BN.py)使用三种网络对`fetch_olivetti_faces`人脸(64×64)数据集进行分类并进行性能对比：
 
 1. Linear + Sigmoid + Linear;
 2. Linear + Dropout(0.05) + Sigmoid + Linear;
@@ -215,6 +215,6 @@ examples中是一些例子。
 
 ## RNN
 
-[RNN.py](examples/RNN.py)中是一个用双向单层GRU对`sklearn`的数字图片数据集进行分类：
+[RNN.py](tests/RNN.py)中是一个用双向单层GRU对`sklearn`的数字图片数据集进行分类：
 
 <img src="src/RNN.png" alt="RNN" style="zoom:67%;" />
