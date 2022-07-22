@@ -144,6 +144,12 @@ pydynet
 ## Install
 
 ```bash
+pip install pydynet
+```
+
+或本地安装
+
+```bash
 git clone https://github.com/Kaslanarian/PyDyNet
 cd PyDyNet
 python setup.py install
