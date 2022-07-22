@@ -218,5 +218,3 @@ examples中是一些例子。
 [RNN.py](examples/RNN.py)中是一个用双向单层GRU对`sklearn`的数字图片数据集进行分类：
 
 <img src="src/RNN.png" alt="RNN" style="zoom:67%;" />
-
-目前RNN部分的模块还在开发中，包括扩展到双向（已完成），引入Attention机制等。
