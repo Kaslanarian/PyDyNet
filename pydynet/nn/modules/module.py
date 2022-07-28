@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from ..parameter import Parameter
 from ...tensor import Tensor
+from ...autograd import set_grad_enabled
 
 
 class Module:
@@ -36,20 +37,21 @@ class Module:
         for param in self._parameters.values():
             yield param
 
-    def train(self):
-        self._train = True
+    def train(self, mode: bool = True):
+        set_grad_enabled(mode)
+        self.set_module_state(mode)
+
+    def set_module_state(self, mode: bool):
+        self._train = mode
         for module in self.__dict__.values():
             if isinstance(module, Module):
-                module.train()
+                module.set_module_state(mode)
 
     def forward(self, x: Tensor) -> Tensor:
         raise NotImplementedError
 
     def eval(self):
-        self._train = False
-        for module in self.__dict__.values():
-            if isinstance(module, Module):
-                module.eval()
+        return self.train(False)
 
 
 class Sequential(Module):

@@ -1,4 +1,5 @@
 import numpy as np
+from .autograd import is_grad_enable, no_grad
 
 
 class Graph:
@@ -70,7 +71,7 @@ class Tensor:
         if isinstance(data, Tensor):
             data = data.data
         self.data: np.ndarray = np.array(data, dtype)
-        self.requires_grad: bool = requires_grad
+        self.requires_grad: bool = requires_grad and is_grad_enable()
         assert not (
             self.requires_grad and self.dtype != float
             and self.dtype != complex
@@ -162,6 +163,12 @@ class Tensor:
 
     def sum(self, axis=None, keepdims=False):
         return sum(self, axis, keepdims)
+
+    def argmax(self, axis=None):
+        return argmax(self, axis)
+
+    def argmin(self, axis=None):
+        return argmin(self, axis)
 
     def build_edge(self, node):
         '''构建两节点的有向边，正常不适用'''
@@ -285,32 +292,38 @@ class Tensor:
         self.data @= other
         return self
 
+    @no_grad()
     def __lt__(self, other):
         if isinstance(other, Tensor):
             other = other.data
         return Tensor(self.data < other)
 
+    @no_grad()
     def __le__(self, other):
         if isinstance(other, Tensor):
             other = other.data
         return Tensor(self.data <= other)
 
     # 这里没有重载__eq__和__neq__是因为在RNN中这样的重载会引发问题
+    @no_grad()
     def eq(self, other):
         if isinstance(other, Tensor):
             other = other.data
         return Tensor(self.data == other)
 
+    @no_grad()
     def ne(self, other):
         if isinstance(other, Tensor):
             other = other.data
         return Tensor(self.data != other)
 
+    @no_grad()
     def __gt__(self, other):
         if isinstance(other, Tensor):
             other = other.data
         return Tensor(self.data > other)
 
+    @no_grad()
     def __ge__(self, other):
         if isinstance(other, Tensor):
             other = other.data
@@ -402,7 +415,7 @@ class UnaryOperator(Tensor):
             x = Tensor(x)
         super().__init__(
             self.forward(x),
-            x.requires_grad,
+            is_grad_enable() and x.requires_grad,
         )
         if self.requires_grad:
             x.build_edge(self)
@@ -449,7 +462,7 @@ class BinaryOperator(Tensor):
             y = Tensor(y)
         super().__init__(
             self.forward(x, y),
-            x.requires_grad or y.requires_grad,
+            is_grad_enable() and (x.requires_grad or y.requires_grad),
         )
         if self.requires_grad:
             x.build_edge(self)
@@ -480,10 +493,11 @@ class MultiOperator(Tensor):
     def __init__(self, *tensors) -> None:
         requires_grad = False
         tensors = list(tensors)
-        for i in range(len(tensors)):
-            if not isinstance(tensors[i], Tensor):
-                tensors[i] = Tensor(tensors[i])
-            requires_grad = requires_grad or tensors[i].requires_grad
+        if is_grad_enable():
+            for i in range(len(tensors)):
+                if not isinstance(tensors[i], Tensor):
+                    tensors[i] = Tensor(tensors[i])
+                requires_grad = requires_grad or tensors[i].requires_grad
 
         super().__init__(self.forward(*tensors), requires_grad=requires_grad)
         if self.requires_grad:
@@ -787,6 +801,28 @@ class min(UnaryOperator):
             full_dim_y = np.expand_dims(self.data, axis=self.axis)
             grad = np.expand_dims(grad, axis=self.axis)
         return (full_dim_y == x.data).astype(float) * grad
+
+
+class argmax(Tensor):
+    def __init__(self, x: Tensor, axis=None) -> None:
+        if not isinstance(x, Tensor):
+            x = Tensor(x)
+        self.axis = axis
+        super().__init__(self.forward(x))
+
+    def forward(self, x: Tensor) -> np.ndarray:
+        return np.argmax(x.data, axis=self.axis)
+
+
+class argmin(Tensor):
+    def __init__(self, x: Tensor, axis=None) -> None:
+        if not isinstance(x, Tensor):
+            x = Tensor(x)
+        self.axis = axis
+        super().__init__(self.forward(x))
+
+    def forward(self, x: Tensor) -> np.ndarray:
+        return np.argmin(x.data, axis=self.axis)
 
 
 class exp(UnaryOperator):
