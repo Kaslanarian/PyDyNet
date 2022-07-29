@@ -43,6 +43,7 @@ graph BT
 ```bash
 pydynet
 ├── __init__.py
+├── autograd.py       # 微分控制模块
 ├── data.py           # 数据集模块
 ├── nn                # 神经网络模块
 │   ├── __init__.py   
