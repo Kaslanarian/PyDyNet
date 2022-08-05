@@ -4,6 +4,8 @@
 
 **PyDyNet已被多个技术公众号和社区分享**：[居然用Numpy实现了一个深度学习框架](https://segmentfault.com/a/1190000042108301).
 
+[![Downloads](https://pepy.tech/badge/pydynet)](https://pepy.tech/project/pydynet) [![Downloads](https://pepy.tech/badge/pydynet/week)](https://pepy.tech/project/pydynet)
+
 ## Update
 
 - 5.10: ver 0.0.1 修改损失函数的定义方式：加入reduction机制，加入Embedding;
