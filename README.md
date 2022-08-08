@@ -4,7 +4,12 @@
 
 **PyDyNet已被多个技术公众号和社区分享**：[居然用Numpy实现了一个深度学习框架](https://segmentfault.com/a/1190000042108301).
 
-[![Downloads](https://pepy.tech/badge/pydynet)](https://pepy.tech/project/pydynet) ![](https://img.shields.io/pypi/dm/pydynet) ![](https://img.shields.io/pypi/l/pydynet) ![](https://img.shields.io/pypi/implementation/numpy) ![](https://img.shields.io/github/stars/Kaslanarian/PyDyNet?style=social) ![](https://img.shields.io/github/forks/Kaslanarian/PyDyNet?style=social)
+[![Downloads](https://pepy.tech/badge/pydynet)](https://pepy.tech/project/pydynet) 
+[![Downloads](https://static.pepy.tech/personalized-badge/pydynet?period=month&units=international_system&left_color=grey&right_color=orange&left_text=downloads/month)](https://pepy.tech/project/pydynet)
+![](https://img.shields.io/pypi/l/pydynet) 
+![](https://img.shields.io/pypi/implementation/numpy) 
+![](https://img.shields.io/github/stars/Kaslanarian/PyDyNet?style=social) 
+![](https://img.shields.io/github/forks/Kaslanarian/PyDyNet?style=social)
 
 ## Update
 
