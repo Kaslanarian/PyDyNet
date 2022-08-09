@@ -1,19 +1,31 @@
+from ctypes import Union
 from .module import Module
 from ..parameter import Parameter
 from .. import init
 from .. import functional as F
 from ...tensor import Tensor, empty
+from ...cuda import Device
 
 import math
 
 
 class Linear(Module):
-    def __init__(self, in_features, out_features, bias=True) -> None:
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        device=None,
+        dtype=None,
+    ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = Parameter(empty((self.in_features, self.out_features)))
-        self.bias = Parameter(empty(self.out_features)) if bias else None
+        kwargs = {"device": Device(device), "dtype": dtype}
+        self.weight = Parameter(
+            empty((self.in_features, self.out_features), **kwargs))
+        self.bias = Parameter(empty(self.out_features, **
+                                    kwargs)) if bias else None
         self.reset_paramters()
 
     def reset_paramters(self):
@@ -29,3 +41,8 @@ class Linear(Module):
     def __repr__(self) -> str:
         return "Linear(in_features={}, out_features={}, bias={})".format(
             self.in_features, self.out_features, self.bias is not None)
+
+    def move(self, device):
+        self.device = device
+        self.weight = self.weight.to(self.device)
+        self.bias = self.bias.to(self.device)

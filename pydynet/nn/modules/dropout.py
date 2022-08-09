@@ -1,6 +1,5 @@
 from .module import Module
 from ...tensor import Tensor
-import numpy as np
 
 
 class Dropout(Module):
@@ -11,7 +10,7 @@ class Dropout(Module):
 
     def forward(self, x) -> Tensor:
         if self._train:
-            return x * Tensor(np.random.binomial(1, 1 - self.p, x.shape[-1]))
+            return x * x.xp.random.binomial(1, 1 - self.p, x.shape[-1])
         return x * (1 - self.p)
 
     def __repr__(self) -> str:

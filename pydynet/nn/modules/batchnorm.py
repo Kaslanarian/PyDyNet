@@ -1,21 +1,27 @@
 from .module import Module
 from ..parameter import Parameter
 from ... import tensor
+from ...cuda import Device
 
 
 class BatchNorm1d(Module):
-    def __init__(self,
-                 num_features: int,
-                 eps: float = 1e-5,
-                 momentum: float = 0.1) -> None:
+    def __init__(
+        self,
+        num_features: int,
+        eps: float = 1e-5,
+        momentum: float = 0.1,
+        device=None,
+        dtype=None,
+    ) -> None:
         super().__init__()
+        kwargs = {"device": Device(device), "dtype": dtype}
         self.num_features = num_features
         self.eps = eps
         self.momentum = momentum
-        self.running_mean = tensor.zeros(self.num_features)
-        self.running_var = tensor.zeros(self.num_features)
-        self.scale = Parameter(tensor.randn(self.num_features))
-        self.shift = Parameter(tensor.zeros(self.num_features))
+        self.running_mean = tensor.zeros(self.num_features, **kwargs)
+        self.running_var = tensor.zeros(self.num_features, **kwargs)
+        self.scale = Parameter(tensor.randn(self.num_features, **kwargs))
+        self.shift = Parameter(tensor.zeros(self.num_features, **kwargs))
 
     def forward(self, x: tensor):
         if self._train:
@@ -41,20 +47,35 @@ class BatchNorm1d(Module):
             self.momentum,
         )
 
+    def move(self, device):
+        self.device = device
+        self.running_mean = self.running_mean.to(self.device)
+        self.running_var = self.running_var.to(self.device)
+        self.scale = self.scale.to(self.device)
+        self.shift = self.shift.to(self.device)
+
 
 class BatchNorm2d(Module):
-    def __init__(self,
-                 num_features: int,
-                 eps: float = 1e-5,
-                 momentum: float = 0.1) -> None:
+    def __init__(
+        self,
+        num_features: int,
+        eps: float = 1e-5,
+        momentum: float = 0.1,
+        device=None,
+        dtype=None,
+    ) -> None:
         super().__init__()
+        kwargs = {"device": Device(device), "dtype": dtype}
         self.num_features = num_features
         self.eps = eps
         self.momentum = momentum
-        self.running_mean = tensor.zeros((1, self.num_features, 1, 1))
-        self.running_var = tensor.zeros((1, self.num_features, 1, 1))
-        self.scale = Parameter(tensor.randn(1, self.num_features, 1, 1))
-        self.shift = Parameter(tensor.zeros((1, self.num_features, 1, 1)))
+        self.running_mean = tensor.zeros((1, self.num_features, 1, 1),
+                                         **kwargs)
+        self.running_var = tensor.zeros((1, self.num_features, 1, 1), **kwargs)
+        self.scale = Parameter(
+            tensor.randn(1, self.num_features, 1, 1, **kwargs))
+        self.shift = Parameter(
+            tensor.zeros((1, self.num_features, 1, 1), **kwargs))
 
     def forward(self, x: tensor):
         if self._train:
@@ -80,3 +101,10 @@ class BatchNorm2d(Module):
             self.num_features,
             self.momentum,
         )
+
+    def move(self, device):
+        self.device = device
+        self.running_mean = self.running_mean.to(self.device)
+        self.running_var = self.running_var.to(self.device)
+        self.scale = self.scale.to(self.device)
+        self.shift = self.shift.to(self.device)

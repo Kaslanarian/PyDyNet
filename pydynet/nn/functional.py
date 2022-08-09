@@ -13,9 +13,9 @@ def linear(x: tensor.Tensor, weight: tensor.Tensor, bias: tensor.Tensor):
 class sigmoid(tensor.UnaryOperator):
     '''Sigmoid运算，我们前向传播避免了溢出问题'''
     def forward(self, x: tensor.Tensor) -> np.ndarray:
-        sigmoid = np.zeros(x.shape)
-        sigmoid[x.data > 0] = 1 / (1 + np.exp(-x.data[x.data > 0]))
-        sigmoid[x.data <= 0] = 1 - 1 / (1 + np.exp(x.data[x.data <= 0]))
+        sigmoid = self.xp.zeros(x.shape)
+        sigmoid[x.data > 0] = 1 / (1 + self.xp.exp(-x.data[x.data > 0]))
+        sigmoid[x.data <= 0] = 1 - 1 / (1 + self.xp.exp(x.data[x.data <= 0]))
         return sigmoid
 
     def grad_fn(self, x: tensor.Tensor, grad: np.ndarray) -> np.ndarray:
@@ -25,9 +25,9 @@ class sigmoid(tensor.UnaryOperator):
 class tanh(tensor.UnaryOperator):
     '''Tanh运算，我们前向传播避免了溢出问题'''
     def forward(self, x: tensor.Tensor) -> np.ndarray:
-        tanh = np.zeros(x.shape)
-        tanh[x.data > 0] = 2 / (1 + np.exp(-2 * x.data[x.data > 0])) - 1
-        tanh[x.data <= 0] = 1 - 2 / (1 + np.exp(2 * x.data[x.data <= 0]))
+        tanh = self.xp.zeros(x.shape)
+        tanh[x.data > 0] = 2 / (1 + self.xp.exp(-2 * x.data[x.data > 0])) - 1
+        tanh[x.data <= 0] = 1 - 2 / (1 + self.xp.exp(2 * x.data[x.data <= 0]))
         return tanh
 
     def grad_fn(self, x: tensor.Tensor, grad: np.ndarray) -> np.ndarray:
@@ -44,21 +44,25 @@ def leaky_relu(x: tensor.Tensor, alpha: float):
 
 def softmax(x: tensor.Tensor, axis=None, keepdims=False):
     '''Softmax函数'''
-    x_sub_max = x - np.max(x.data)
+    x_sub_max = x - x.data.max()
     exp_ = tensor.exp(x_sub_max)
     return exp_ / tensor.sum(exp_, axis=axis, keepdims=keepdims)
 
 
 def log_softmax(x: tensor.Tensor, axis=None, keepdims=False):
     '''log-softmax函数'''
-    x_sub_max = x - np.max(x.data)
+    x_sub_max = x - x.data.max()
     return x_sub_max - tensor.log(
         tensor.sum(tensor.exp(x_sub_max), axis=axis, keepdims=keepdims))
 
 
 class __im2col1d(tensor.UnaryOperator):
-    def __init__(self, x: tensor.Tensor, kernel_size: int,
-                 stride: int) -> None:
+    def __init__(
+        self,
+        x: tensor.Tensor,
+        kernel_size: int,
+        stride: int,
+    ) -> None:
         self.N, self.in_channels, self.n_features = x.shape
         self.kernel_size = kernel_size
         self.stride = stride
@@ -66,7 +70,7 @@ class __im2col1d(tensor.UnaryOperator):
         super().__init__(x)
 
     def forward(self, x: tensor.Tensor) -> np.ndarray:
-        col = np.zeros(
+        col = self.xp.zeros(
             (self.N, self.in_channels, self.n_output, self.kernel_size))
 
         for i in range(self.kernel_size):
@@ -76,7 +80,7 @@ class __im2col1d(tensor.UnaryOperator):
         return col
 
     def grad_fn(self, x: tensor.Tensor, grad: np.ndarray) -> np.ndarray:
-        grad_x = np.zeros((self.N, self.in_channels, self.n_features))
+        grad_x = self.xp.zeros((self.N, self.in_channels, self.n_features))
         for i in range(self.kernel_size):
             i_max = i + self.n_output * self.stride
             grad_x[..., i:i_max:self.stride] += grad[..., i]
@@ -90,8 +94,9 @@ class __pad1d(tensor.UnaryOperator):
         super().__init__(x)
 
     def forward(self, x: tensor.Tensor) -> np.ndarray:
-        return np.pad(x.data, [(0, 0), (0, 0),
-                               (self.pad_width, self.pad_width)], 'constant')
+        return self.xp.pad(x.data, [(0, 0), (0, 0),
+                                    (self.pad_width, self.pad_width)],
+                           'constant')
 
     def grad_fn(self, x: tensor.Tensor, grad: np.ndarray) -> np.ndarray:
         if self.pad_width == 0:
@@ -99,10 +104,12 @@ class __pad1d(tensor.UnaryOperator):
         return grad[..., self.pad_width:-self.pad_width]
 
 
-def conv1d(x: tensor.Tensor,
-           kernel: tensor.Tensor,
-           padding: int = 0,
-           stride: int = 1):
+def conv1d(
+    x: tensor.Tensor,
+    kernel: tensor.Tensor,
+    padding: int = 0,
+    stride: int = 1,
+):
     '''一维卷积函数
 
     基于im2col实现的一维卷积.
@@ -124,7 +131,12 @@ def conv1d(x: tensor.Tensor,
     return (col @ kernel.transpose(1, 2, 0)).sum(1).transpose(0, 2, 1)
 
 
-def max_pool1d(x: tensor.Tensor, kernel_size: int, stride: int, padding=0):
+def max_pool1d(
+    x: tensor.Tensor,
+    kernel_size: int,
+    stride: int,
+    padding: int = 0,
+):
     '''一维池化函数
 
     基于im2col实现的一维池化.`
@@ -145,7 +157,12 @@ def max_pool1d(x: tensor.Tensor, kernel_size: int, stride: int, padding=0):
     return col.max(-1)
 
 
-def avg_pool1d(x: tensor.Tensor, kernel_size: int, stride: int, padding=0):
+def avg_pool1d(
+    x: tensor.Tensor,
+    kernel_size: int,
+    stride: int,
+    padding: int = 0,
+):
     '''一维平均池化函数
 
     基于im2col实现的一维池化.`
@@ -167,7 +184,12 @@ def avg_pool1d(x: tensor.Tensor, kernel_size: int, stride: int, padding=0):
 
 
 class __im2col2d(tensor.UnaryOperator):
-    def __init__(self, x: tensor.Tensor, kernel_size, stride: int) -> None:
+    def __init__(
+        self,
+        x: tensor.Tensor,
+        kernel_size: int,
+        stride: int,
+    ) -> None:
         self.N, self.in_channels, self.n_h, self.n_w = x.shape
         self.kernel_size = kernel_size
         self.stride = stride
@@ -177,8 +199,8 @@ class __im2col2d(tensor.UnaryOperator):
         super().__init__(x)
 
     def forward(self, x: tensor.Tensor) -> np.ndarray:
-        col = np.zeros((self.N, self.in_channels, self.kernel_size,
-                        self.kernel_size, self.out_h, self.out_w))
+        col = self.xp.zeros((self.N, self.in_channels, self.kernel_size,
+                             self.kernel_size, self.out_h, self.out_w))
         for i in range(self.kernel_size):
             i_max = i + self.out_h * self.stride
             for j in range(self.kernel_size):
@@ -190,7 +212,7 @@ class __im2col2d(tensor.UnaryOperator):
 
     def grad_fn(self, x: tensor.Tensor, grad: np.ndarray) -> np.ndarray:
         grad_col = grad
-        grad_x = np.zeros((self.N, self.in_channels, self.n_h, self.n_w))
+        grad_x = self.xp.zeros((self.N, self.in_channels, self.n_h, self.n_w))
         for i in range(self.kernel_size):
             i_max = i + self.out_h * self.stride
             for j in range(self.kernel_size):
@@ -206,9 +228,10 @@ class __pad2d(tensor.UnaryOperator):
         super().__init__(x)
 
     def forward(self, x: tensor.Tensor) -> np.ndarray:
-        return np.pad(x.data, [(0, 0), (0, 0),
-                               (self.pad_width, self.pad_width),
-                               (self.pad_width, self.pad_width)], 'constant')
+        return self.xp.pad(x.data, [(0, 0), (0, 0),
+                                    (self.pad_width, self.pad_width),
+                                    (self.pad_width, self.pad_width)],
+                           'constant')
 
     def grad_fn(self, x: tensor.Tensor, grad: np.ndarray) -> np.ndarray:
         if self.pad_width == 0:
@@ -329,7 +352,7 @@ def nll_loss(y_pred, y_true, reduction='mean'):
 
 def cross_entropy_loss(y_pred, y_true, reduction='mean'):
     '''交叉熵损失'''
-    update_y_pred = y_pred - np.max(y_pred.data)
+    update_y_pred = y_pred - y_pred.data.max()
     log_sum_exp = tensor.log(
         tensor.sum(tensor.exp(update_y_pred), 1, keepdims=True))
     nll = (log_sum_exp - update_y_pred) * y_true

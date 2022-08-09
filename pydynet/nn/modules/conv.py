@@ -3,19 +3,25 @@ from ..parameter import Parameter
 from .. import init
 from .. import functional as F
 from ... import tensor
+from ...cuda import Device
 
 import math
 
 
 class Conv1d(Module):
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 kernel_size,
-                 stride=1,
-                 padding=0,
-                 bias=True) -> None:
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        stride: int = 1,
+        padding: int = 0,
+        bias: bool = True,
+        device=None,
+        dtype=None,
+    ) -> None:
         super().__init__()
+        kwargs = {"device": Device(device), "dtype": dtype}
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -23,9 +29,10 @@ class Conv1d(Module):
         self.stride = stride
         self.weight = Parameter(
             tensor.empty(
-                (self.out_channels, self.in_channels, self.kernel_size)))
+                (self.out_channels, self.in_channels, self.kernel_size),
+                **kwargs))
         self.bias = Parameter(tensor.empty(
-            (1, self.out_channels, 1))) if bias else None
+            (1, self.out_channels, 1), **kwargs)) if bias else None
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -53,18 +60,26 @@ class Conv1d(Module):
             self.bias is not None,
         )
 
+    def move(self, device):
+        self.device = device
+        self.weight = self.weight.to(self.device)
+        self.bias = self.bias.to(self.device)
+
 
 class Conv2d(Module):
     def __init__(
         self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        padding=0,
-        stride=1,
-        bias=True,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        padding: int = 0,
+        stride: int = 1,
+        bias: bool = True,
+        device=None,
+        dtype=None,
     ) -> None:
         super().__init__()
+        kwargs = {"device": Device(device), "dtype": dtype}
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -72,9 +87,10 @@ class Conv2d(Module):
         self.stride = stride
         self.weight = Parameter(
             tensor.empty((self.out_channels, self.in_channels,
-                          self.kernel_size, self.kernel_size)))
-        self.bias = Parameter(tensor.empty(
-            (1, self.out_channels, 1, 1))) if bias else None
+                          self.kernel_size, self.kernel_size), **kwargs))
+        self.bias = Parameter(
+            tensor.empty(
+                (1, self.out_channels, 1, 1), **kwargs)) if bias else None
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -102,9 +118,14 @@ class Conv2d(Module):
             self.bias is not None,
         )
 
+    def move(self, device):
+        self.device = device
+        self.weight = self.weight.to(self.device)
+        self.bias = self.bias.to(self.device)
+
 
 class MaxPool1d(Module):
-    def __init__(self, kernel_size, stride, padding) -> None:
+    def __init__(self, kernel_size: int, stride: int, padding: int) -> None:
         super().__init__()
         self.kernel_size = kernel_size
         self.stride = stride
@@ -123,7 +144,7 @@ class MaxPool1d(Module):
 
 
 class AvgPool1d(Module):
-    def __init__(self, kernel_size, stride, padding) -> None:
+    def __init__(self, kernel_size: int, stride: int, padding: int) -> None:
         super().__init__()
         self.kernel_size = kernel_size
         self.stride = stride
@@ -142,7 +163,7 @@ class AvgPool1d(Module):
 
 
 class MaxPool2d(Module):
-    def __init__(self, kernel_size, stride, padding) -> None:
+    def __init__(self, kernel_size: int, stride: int, padding: int) -> None:
         super().__init__()
         self.kernel_size = kernel_size
         self.stride = stride
@@ -161,7 +182,7 @@ class MaxPool2d(Module):
 
 
 class AvgPool2d(Module):
-    def __init__(self, kernel_size, stride, padding) -> None:
+    def __init__(self, kernel_size: int, stride: int, padding: int) -> None:
         super().__init__()
         self.kernel_size = kernel_size
         self.stride = stride

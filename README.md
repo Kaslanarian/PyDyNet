@@ -4,11 +4,11 @@
 
 **PyDyNet已被多个技术公众号和社区分享**：[居然用Numpy实现了一个深度学习框架](https://segmentfault.com/a/1190000042108301).
 
-[![Downloads](https://pepy.tech/badge/pydynet)](https://pepy.tech/project/pydynet) 
+[![Downloads](https://pepy.tech/badge/pydynet)](https://pepy.tech/project/pydynet)
 [![Downloads](https://static.pepy.tech/personalized-badge/pydynet?period=month&units=international_system&left_color=grey&right_color=orange&left_text=downloads/month)](https://pepy.tech/project/pydynet)
-![](https://img.shields.io/pypi/l/pydynet) 
-![](https://img.shields.io/pypi/implementation/numpy) 
-![](https://img.shields.io/github/stars/Kaslanarian/PyDyNet?style=social) 
+![](https://img.shields.io/pypi/l/pydynet)
+![](https://img.shields.io/pypi/implementation/numpy)
+![](https://img.shields.io/github/stars/Kaslanarian/PyDyNet?style=social)
 ![](https://img.shields.io/github/forks/Kaslanarian/PyDyNet?style=social)
 
 ## Update
@@ -20,16 +20,17 @@
 - 5.30: ver 0.0.3 将一维卷积算法退化成基于循环的im2col，新版本NumPy似乎不是很支持strided上数组的魔改；
 - 7.22: ver 0.0.4 增加了Module类和Parameter类，将模块重组、增加多种Pytorch支持的初始化方式；正在撰写新的Manual；
 - 7.28: ver 0.0.5 加入no_grad方法，可以像pytorch一样禁止自动微分，比如`@no_grad()`和`with no_grad()`，详见[autograd.py](/pydynet/autograd.py);
+- 8.09: ver 0.0.6 基于[cupy](https://cupy.dev/)，PyDyNet现在可以使用显卡加速训练，用法与PyTorch一致，详见[tests](./tests)中`cu*.py`；
 - ...
 
 ## Overview
 
-PyDyNet也是纯NumPy实现的神经网络，语法受PyTorch的启发，大致结构如下：
+PyDyNet也是纯NumPy(0.0.6版本后加入CuPy，其用法和NumPy一致)实现的神经网络，语法受PyTorch的启发，大致结构如下：
 
 ```mermaid
 graph BT
-   N ----> Dataset ----> Data(DataLoader)
-   N(numpy.ndarray) --> A(Tensor)
+   N ----> ds(Dataset) ----> Data(DataLoader)
+   N(numpy.ndarray/cupy.ndarray) --> A(Tensor)
    A --Eager execution--> B(Basic operators: add, exp, etc)
    B --> E(Mechanism: Dropout, BN, etc)
    E --> D
@@ -51,6 +52,7 @@ graph BT
 pydynet
 ├── __init__.py
 ├── autograd.py       # 微分控制模块
+├── cuda.py           # cuda功能模块
 ├── data.py           # 数据集模块
 ├── nn                # 神经网络模块
 │   ├── __init__.py   
@@ -148,7 +150,21 @@ pydynet
 8. 基于im2col高效实现Conv1d, Conv2d, max_pool1d和max_pool2d，从而实现CNN；
 9. 支持多层的**双向**RNN，LSTM和GRU；
 10. 实现了PyTorch中的Dataset类、DataLoader类，从而将批数据集封装成迭代器；
-11. 多种初始化方式，包括Kaiming和Xavier。
+11. 多种初始化方式，包括Kaiming和Xavier；
+12. 基于cupy实现了显卡计算和训练：
+
+   ```python
+   from pydynet import Tensor
+   
+   x = Tensor([1., 2., 3.], device='cuda')
+   y = Tensor([1., 2., 3.], device='cuda')
+   z = (x * y).sum()
+
+   w = Tensor([1., 2., 3.]) # CPU上的Tensor
+   x * w # 报错
+   ```
+
+13. ...
 
 ## Install
 
@@ -233,3 +249,15 @@ python setup.py install
 [RNN.py](tests/RNN.py)中是一个用双向单层GRU对`sklearn`的数字图片数据集进行分类：
 
 <img src="src/RNN.png" alt="RNN" style="zoom:67%;" />
+
+## cuda相关
+
+[cuDNN.py](tests/cuDNN.py), [cuCNN.py](tests/cuCNN.py), [cuDropoutBN.py](tests/cuDropoutBN.py), [cuRNN.py](tests/cuRNN.py)分别是上面四种网络的cuda版本，并对网络进行了相应的修改，主要是介绍如何使用PyDyNet的显卡功能，且已经在无显卡和有显卡的环境下都通过了测试。
+
+|  Net  |         Dataset          |        Parameters        |   CPU time   |   GPU time   |
+| :---: | :----------------------: | :----------------------: | :----------: | :----------: |
+|  FC   |     Digits (1970×64)     | batch_size=128, epoch=50 | 30.8s±392ms  | 22.4s±298ms  |
+| CNN1d | OlivettiFaces (400×4096) | batch_size=64, epoch=50  | 8.76s±68.7ms | 4.49s±16.3ms |
+| CNN2d | OlivettiFaces (400×4096) | batch_size=64, epoch=50  | 14.1s±285ms  |  4.54s±49ms  |
+
+事实上，对于越庞大的网络（更宽，更深，卷积），GPU加速效果更好。

@@ -1,4 +1,6 @@
+from typing import Any, List, Tuple, Union
 import numpy as np
+from .cuda import Device
 from .autograd import is_grad_enable, no_grad
 
 
@@ -67,30 +69,44 @@ class Tensor:
     >>> y = Tensor([1, 2, 3], dtype=float)
     >>> z = Tensor(np.random.rand(3, 4))
     '''
-    def __init__(self, data, requires_grad: bool = False, dtype=None) -> None:
+    def __init__(
+        self,
+        data: Any,
+        dtype=None,
+        device: Union[Device, int, str, None] = None,
+        requires_grad: bool = False,
+    ) -> None:
         if isinstance(data, Tensor):
             data = data.data
-        self.data: np.ndarray = np.array(data, dtype)
+
+        if not isinstance(device, Device):
+            device = Device(device)
+
+        self.device: Device = device
+        with self.device:
+            self.data = self.xp.array(data, dtype)
+
         self.requires_grad: bool = requires_grad and is_grad_enable()
         assert not (
             self.requires_grad and self.dtype != float
-            and self.dtype != complex
-        ), "Only Tensors of floating point and complex dtype can require gradients"
-        self.grad: np.ndarray = np.zeros_like(
+        ), "Only Tensors of floating point dtype can require gradients!"
+        self.grad = self.xp.zeros_like(
             self.data) if self.requires_grad else None
-        self.next: list = list()
-        self.last: list = list()
+
+        self.next: List[Tensor] = list()
+        self.last: List[Tensor] = list()
+
         if self.requires_grad:
             # 不需要求梯度的节点不出现在动态计算图中
             Graph.add_node(self)
 
     @property
-    def is_leaf(self):
+    def is_leaf(self) -> bool:
         '''判断是否为叶节点:需要求导且无上游节点的节点为叶节点.'''
         return not self.requires_grad or len(self.last) == 0
 
     @property
-    def shape(self):
+    def shape(self) -> Tuple[int]:
         '''张量的形状，用法同NumPy.
         
         Example
@@ -102,7 +118,7 @@ class Tensor:
         return self.data.shape
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         '''张量的维度，用法同NumPy.
         
         Example
@@ -126,7 +142,7 @@ class Tensor:
         return self.data.dtype
 
     @property
-    def size(self):
+    def size(self) -> int:
         '''张量的元素个数，用法同NumPy.
 
         Example
@@ -143,7 +159,7 @@ class Tensor:
 
     def astype(self, new_type):
         '''类型转换，我们不允许可求导节点的类型转换'''
-        assert self.requires_grad
+        assert not self.requires_grad
         self.data.astype(new_type)
 
     def reshape(self, *new_shape):
@@ -152,22 +168,38 @@ class Tensor:
     def transpose(self, *axes):
         return transpose(self, axes if len(axes) != 0 else None)
 
-    def max(self, axis=None, keepdims=False):
+    def max(
+        self,
+        axis: Union[int, Tuple, None] = None,
+        keepdims: bool = False,
+    ):
         return max(self, axis, keepdims)
 
-    def min(self, axis=None, keepdims=False):
+    def min(
+        self,
+        axis: Union[int, Tuple, None] = None,
+        keepdims: bool = False,
+    ):
         return min(self, axis, keepdims)
 
-    def mean(self, axis=None, keepdims=False):
+    def mean(
+        self,
+        axis: Union[int, Tuple, None] = None,
+        keepdims: bool = False,
+    ):
         return mean(self, axis, keepdims)
 
-    def sum(self, axis=None, keepdims=False):
+    def sum(
+        self,
+        axis: Union[int, Tuple, None] = None,
+        keepdims: bool = False,
+    ):
         return sum(self, axis, keepdims)
 
-    def argmax(self, axis=None):
+    def argmax(self, axis: Union[int, Tuple, None] = None):
         return argmax(self, axis)
 
-    def argmin(self, axis=None):
+    def argmin(self, axis: Union[int, Tuple, None] = None):
         return argmin(self, axis)
 
     def build_edge(self, node):
@@ -176,11 +208,12 @@ class Tensor:
         node.last.append(self)
 
     def __repr__(self) -> str:
-        return "{}({}, requires_grad={})".format(
-            "tensor",
+        return "{}({}, requires_grad={}".format(
+            "Tensor",
             self.data,
             self.requires_grad,
-        )
+        ) + (", device={}".format(self.device)
+             if self.device.device != "cpu" else "") + ")"
 
     def __add__(self, x):
         return add(self, x)
@@ -254,7 +287,7 @@ class Tensor:
         else:
             self.data[key] = value.data
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)
 
     def __iadd__(self, other):
@@ -329,7 +362,7 @@ class Tensor:
             other = other.data
         return Tensor(self.data >= other)
 
-    def backward(self, retain_graph=False):
+    def backward(self, retain_graph: bool = False):
         '''
         以节点为输出进行反向传播
 
@@ -354,7 +387,7 @@ class Tensor:
 
         assert self.data.ndim == 0, "backward should be called only on a scalar."
 
-        self.grad = np.ones_like(self.data)
+        self.grad = self.xp.ones_like(self.data)
         for i in range(len(Graph.node_list) - 1, -1, -1):
             if Graph.node_list[i] is self:
                 y_id = i
@@ -366,13 +399,13 @@ class Tensor:
                 add_grad = node.grad_fn(last, grad)
                 # 广播机制处理梯度
                 if add_grad.shape != last.shape:
-                    add_grad = np.sum(
+                    add_grad = self.xp.sum(
                         add_grad,
                         axis=tuple(-i for i in range(1, last.ndim + 1)
                                    if last.shape[-i] == 1),
                         keepdims=True,
                     )
-                    add_grad = np.sum(
+                    add_grad = self.xp.sum(
                         add_grad,
                         axis=tuple(range(add_grad.ndim - last.ndim)),
                     )
@@ -386,14 +419,33 @@ class Tensor:
 
     def zero_grad(self):
         '''梯度归零'''
-        self.grad = np.zeros(self.shape)
+        self.grad = self.xp.zeros(self.shape)
 
     def numpy(self) -> np.ndarray:
         '''返回Tensor的内部数据，即NumPy数组(拷贝)'''
-        return self.data.copy()
+        return self.cpu().data.copy()
 
     def item(self):
         return self.data.item()
+
+    def to(self, device):
+        device = Device(device)
+        if self.device == device:
+            return self
+        elif device.device == "cpu":  # cuda -> cpu
+            return Tensor(self.data.get(), dtype=self.dtype, device=device)
+        else:  # cpu -> cuda
+            return Tensor(self.data, dtype=self.dtype, device=device)
+
+    def cpu(self):
+        return self.to("cpu")
+
+    def cuda(self):
+        return self.to("cuda")
+
+    @property
+    def xp(self):
+        return self.device.xp
 
 
 class UnaryOperator(Tensor):
@@ -413,9 +465,11 @@ class UnaryOperator(Tensor):
     def __init__(self, x: Tensor) -> None:
         if not isinstance(x, Tensor):
             x = Tensor(x)
+        self.device = x.device
         super().__init__(
-            self.forward(x),
-            is_grad_enable() and x.requires_grad,
+            data=self.forward(x),
+            device=x.device,
+            requires_grad=is_grad_enable() and x.requires_grad,
         )
         if self.requires_grad:
             x.build_edge(self)
@@ -456,13 +510,19 @@ class BinaryOperator(Tensor):
     >>> z = add(x, y)
     '''
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        if not isinstance(x, Tensor):
-            x = Tensor(x)
-        if not isinstance(y, Tensor):
-            y = Tensor(y)
+        if not isinstance(x, Tensor) and isinstance(y, Tensor):
+            x = Tensor(x, device=y.device)
+        elif isinstance(x, Tensor) and not isinstance(y, Tensor):
+            y = Tensor(y, device=x.device)
+        elif not (isinstance(x, Tensor) and isinstance(y, Tensor)):
+            x, y = Tensor(x), Tensor(y)
+        assert x.device == y.device
+        self.device = x.device
         super().__init__(
-            self.forward(x, y),
-            is_grad_enable() and (x.requires_grad or y.requires_grad),
+            data=self.forward(x, y),
+            device=x.device,
+            requires_grad=is_grad_enable()
+            and (x.requires_grad or y.requires_grad),
         )
         if self.requires_grad:
             x.build_edge(self)
@@ -472,7 +532,7 @@ class BinaryOperator(Tensor):
         '''前向传播函数，参数为Tensor，返回的是NumPy数组'''
         raise NotImplementedError
 
-    def grad_fn(self, x: Tensor, grad) -> np.ndarray:
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         '''
         反向传播函数，参数为下游节点，从上游流入该节点梯度。
         注："上游"和"下游"针对的是反向传播，比如z = f(x, y)，x和y是z的下游节点.
@@ -482,32 +542,6 @@ class BinaryOperator(Tensor):
         grad : ndarray
             上游流入该节点的梯度
         '''
-        raise NotImplementedError
-
-    def __repr__(self) -> str:
-        return "Tensor({}, op={})".format(self.data, self.__class__.__name__)
-
-
-class MultiOperator(Tensor):
-    '''多元运算算子基类'''
-    def __init__(self, *tensors) -> None:
-        requires_grad = False
-        tensors = list(tensors)
-        if is_grad_enable():
-            for i in range(len(tensors)):
-                if not isinstance(tensors[i], Tensor):
-                    tensors[i] = Tensor(tensors[i])
-                requires_grad = requires_grad or tensors[i].requires_grad
-
-        super().__init__(self.forward(*tensors), requires_grad=requires_grad)
-        if self.requires_grad:
-            for i in range(len(tensors)):
-                tensors[i].build_edge(self)
-
-    def forward(self, *tensors) -> np.ndarray:
-        raise NotImplementedError
-
-    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
     def __repr__(self) -> str:
@@ -614,7 +648,7 @@ class pow(BinaryOperator):
         if node is self.last[0]:
             return (self.data * self.last[1].data / node.data) * grad
         else:
-            return self.data * np.log(self.last[0].data) * grad
+            return self.data * self.xp.log(self.last[0].data) * grad
 
 
 class matmul(BinaryOperator):
@@ -636,7 +670,7 @@ class matmul(BinaryOperator):
     def grad_fn(self, node: Tensor, grad: np.ndarray) -> np.ndarray:
         if node is self.last[0]:
             if self.last[1].ndim == 1:
-                return np.expand_dims(grad, -1) @ np.expand_dims(
+                return self.xp.expand_dims(grad, -1) @ self.xp.expand_dims(
                     self.last[1].data, -2)
             elif self.last[1].ndim > 2:
                 shape = list(range(self.last[1].ndim))
@@ -645,8 +679,8 @@ class matmul(BinaryOperator):
             return grad @ self.last[1].data.T
         else:
             if self.last[0].ndim == 1:
-                return np.expand_dims(self.last[0].data, -1) @ np.expand_dims(
-                    grad, -2)
+                return self.xp.expand_dims(self.last[0].data,
+                                           -1) @ self.xp.expand_dims(grad, -2)
             elif self.last[0].ndim > 2:
                 shape = list(range(self.last[0].ndim))
                 shape[-1], shape[-2] = shape[-2], shape[-1]
@@ -663,10 +697,10 @@ class abs(UnaryOperator):
     add : 加法算子
     '''
     def forward(self, x: Tensor) -> np.ndarray:
-        return np.abs(x)
+        return self.xp.abs(x)
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
-        mask = np.zeros(x.shape)
+        mask = self.xp.zeros(x.shape)
         mask[x > 0] = 1.
         mask[x < 0] = -1.
         return grad * mask
@@ -700,12 +734,12 @@ class sum(UnaryOperator):
         super().__init__(x)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        return np.sum(x.data, axis=self.axis, keepdims=self.keepdims)
+        return self.xp.sum(x.data, axis=self.axis, keepdims=self.keepdims)
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if not (self.axis is None or self.keepdims):
-            grad = np.expand_dims(grad, axis=self.axis)
-        return np.ones(x.shape) * grad
+            grad = self.xp.expand_dims(grad, axis=self.axis)
+        return self.xp.ones(x.shape) * grad
 
 
 class mean(UnaryOperator):
@@ -729,12 +763,12 @@ class mean(UnaryOperator):
         super().__init__(x)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        return np.mean(x.data, axis=self.axis, keepdims=self.keepdims)
+        return self.xp.mean(x.data, axis=self.axis, keepdims=self.keepdims)
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if not (self.axis is None or self.keepdims):
-            grad = np.expand_dims(grad, axis=self.axis)
-        return np.ones(x.shape) * grad * self.data.size / x.data.size
+            grad = self.xp.expand_dims(grad, axis=self.axis)
+        return self.xp.ones(x.shape) * grad * self.data.size / x.data.size
 
 
 class max(UnaryOperator):
@@ -758,15 +792,15 @@ class max(UnaryOperator):
         super().__init__(x)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        return np.max(x.data, axis=self.axis, keepdims=self.keepdims)
+        return self.xp.max(x.data, axis=self.axis, keepdims=self.keepdims)
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if self.keepdims or self.axis is None:
             full_dim_y = self.data
         else:
             # 还原维度
-            full_dim_y = np.expand_dims(self.data, axis=self.axis)
-            grad = np.expand_dims(grad, axis=self.axis)
+            full_dim_y = self.xp.expand_dims(self.data, axis=self.axis)
+            grad = self.xp.expand_dims(grad, axis=self.axis)
         return (full_dim_y == x.data).astype(float) * grad
 
 
@@ -791,15 +825,15 @@ class min(UnaryOperator):
         super().__init__(x)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        return np.min(x.data, axis=self.axis, keepdims=self.keepdims)
+        return self.xp.min(x.data, axis=self.axis, keepdims=self.keepdims)
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if self.keepdims or self.axis is None:
             full_dim_y = self.data
         else:
             # 还原维度
-            full_dim_y = np.expand_dims(self.data, axis=self.axis)
-            grad = np.expand_dims(grad, axis=self.axis)
+            full_dim_y = self.xp.expand_dims(self.data, axis=self.axis)
+            grad = self.xp.expand_dims(grad, axis=self.axis)
         return (full_dim_y == x.data).astype(float) * grad
 
 
@@ -808,10 +842,11 @@ class argmax(Tensor):
         if not isinstance(x, Tensor):
             x = Tensor(x)
         self.axis = axis
-        super().__init__(self.forward(x))
+        self.device = x.device
+        super().__init__(self.forward(x), device=self.device)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        return np.argmax(x.data, axis=self.axis)
+        return self.xp.argmax(x.data, axis=self.axis)
 
 
 class argmin(Tensor):
@@ -819,10 +854,11 @@ class argmin(Tensor):
         if not isinstance(x, Tensor):
             x = Tensor(x)
         self.axis = axis
-        super().__init__(self.forward(x))
+        self.device = x.device
+        super().__init__(self.forward(x), device=self.device)
 
     def forward(self, x: Tensor) -> np.ndarray:
-        return np.argmin(x.data, axis=self.axis)
+        return self.xp.argmin(x.data, axis=self.axis)
 
 
 class exp(UnaryOperator):
@@ -834,7 +870,7 @@ class exp(UnaryOperator):
     >>> y = exp(x)
     '''
     def forward(self, x: Tensor):
-        return np.exp(x.data)
+        return self.xp.exp(x.data)
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         return self.data * grad
@@ -849,7 +885,7 @@ class log(UnaryOperator):
     >>> y = log(x)
     '''
     def forward(self, x: Tensor):
-        return np.log(x.data)
+        return self.xp.log(x.data)
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         return grad / x.data
@@ -857,7 +893,7 @@ class log(UnaryOperator):
 
 class maximum(BinaryOperator):
     def forward(self, x: Tensor, y: Tensor) -> np.ndarray:
-        return np.maximum(x.data, y.data)
+        return self.xp.maximum(x.data, y.data)
 
     def grad_fn(self, x: Tensor, grad) -> np.ndarray:
         return (self.data == x.data) * grad
@@ -865,7 +901,7 @@ class maximum(BinaryOperator):
 
 class minimum(BinaryOperator):
     def forward(self, x: Tensor, y: Tensor) -> np.ndarray:
-        return np.minimum(x, y)
+        return self.xp.minimum(x, y)
 
     def grad_fn(self, x: Tensor, grad) -> np.ndarray:
         return (self.data == x) * grad
@@ -921,7 +957,7 @@ class transpose(UnaryOperator):
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
         if self.axes is None:
             return grad.transpose()
-        return grad.transpose(np.argsort(self.axes))
+        return grad.transpose(tuple(np.argsort(self.axes)))
 
 
 class get_slice(UnaryOperator):
@@ -952,7 +988,7 @@ class get_slice(UnaryOperator):
         return x.data[self.key]
 
     def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
-        full_grad = np.zeros(x.shape)
+        full_grad = self.xp.zeros(x.shape)
         full_grad[self.key] = grad
         return full_grad
 
@@ -962,43 +998,52 @@ class concatenate(Tensor):
     
     Parameters
     ----------
-    *tensors : 
+    tensors : 
         待连接的张量：
     axis : default=0
         连接轴，默认是沿着第一个轴拼接.
     '''
-    def __init__(self, *tensors, axis=0) -> None:
+    def __init__(self, tensors: List[Tensor], axis=0) -> None:
         requires_grad = False
-        self.tensors = list(tensors)
+        self.tensors = tensors
         self.axis = axis
         self.indices = [0]
+
         for i in range(len(self.tensors)):
-            if not isinstance(tensors[i], Tensor):
-                self.tensors[i] = Tensor(tensors[i])
+            assert isinstance(
+                tensors[i],
+                Tensor), "Concatenate elements in 'tensors' must be 'Tensor'"
+            if i == 0:
+                device = tensors[i].device
+            else:
+                assert tensors[i].device == device
             requires_grad = requires_grad or self.tensors[i].requires_grad
             self.indices.append(self.indices[-1] +
                                 self.tensors[i].shape[self.axis])
-
-        super().__init__(self.forward(), requires_grad=requires_grad)
+        self.device = device
+        super().__init__(self.forward(),
+                         requires_grad=requires_grad and is_grad_enable(),
+                         device=device)
         if self.requires_grad:
             for i in range(len(self.tensors)):
                 self.tensors[i].build_edge(self)
 
     def forward(self):
-        return np.concatenate([t.data for t in self.tensors], axis=self.axis)
+        return self.xp.concatenate([t.data for t in self.tensors],
+                                   axis=self.axis)
 
     def grad_fn(self, x, grad: np.ndarray):
         x_id = self.tensors.index(x)
         start = self.indices[x_id]
         end = self.indices[x_id + 1]
-        slc = [slice(None)] * len(grad.shape)
+        slc = [slice(None)] * grad.ndim
         slc[self.axis] = slice(start, end)
         return grad[tuple(slc)]
 
 
 # 一些包装的特殊矩阵
-def zeros(shape, requires_grad=False):
-    '''全零张量
+def zeros(shape, dtype=None, device=None, requires_grad=False):
+    '''全0张量
     
     Parameters
     ----------
@@ -1007,10 +1052,13 @@ def zeros(shape, requires_grad=False):
     require_grad : bool, default=False
         是否需要求导
     '''
-    return Tensor(np.zeros(shape), requires_grad=requires_grad)
+    return Tensor(np.zeros(shape),
+                  dtype=dtype,
+                  device=device,
+                  requires_grad=requires_grad)
 
 
-def ones(shape, requires_grad=False):
+def ones(shape, dtype=None, device=None, requires_grad=False):
     '''全1张量
     
     Parameters
@@ -1020,10 +1068,13 @@ def ones(shape, requires_grad=False):
     require_grad : bool, default=False
         是否需要求导
     '''
-    return Tensor(np.ones(shape), requires_grad=requires_grad)
+    return Tensor(np.ones(shape),
+                  dtype=dtype,
+                  device=device,
+                  requires_grad=requires_grad)
 
 
-def randn(*shape, requires_grad=False):
+def randn(*shape, dtype=None, device=None, requires_grad=False):
     '''0-1正态分布张量
     
     Parameters
@@ -1033,10 +1084,13 @@ def randn(*shape, requires_grad=False):
     require_grad : bool, default=False
         是否需要求导
     '''
-    return Tensor(np.random.randn(*shape), requires_grad=requires_grad)
+    return Tensor(np.random.randn(*shape),
+                  dtype=dtype,
+                  device=device,
+                  requires_grad=requires_grad)
 
 
-def rand(*shape, requires_grad=False):
+def rand(*shape, dtype=None, device=None, requires_grad=False):
     '''[0, 1)均匀分布张量
     
     Parameters
@@ -1046,10 +1100,18 @@ def rand(*shape, requires_grad=False):
     require_grad : bool, default=False
         是否需要求导
     '''
-    return Tensor(np.random.rand(*shape), requires_grad=requires_grad)
+    return Tensor(np.random.rand(*shape),
+                  dtype=dtype,
+                  device=device,
+                  requires_grad=requires_grad)
 
 
-def uniform(low: float, high: float, shape=None, requires_grad=False):
+def uniform(low: float,
+            high: float,
+            shape=None,
+            dtype=None,
+            device=None,
+            requires_grad=False):
     '''均匀分布张量
     
     Parameters
@@ -1064,8 +1126,13 @@ def uniform(low: float, high: float, shape=None, requires_grad=False):
         是否需要求导
     '''
     return Tensor(np.random.uniform(low, high, size=shape),
+                  dtype=dtype,
+                  device=device,
                   requires_grad=requires_grad)
 
 
-def empty(shape, requires_grad=False):
-    return Tensor(np.empty(shape), requires_grad=requires_grad)
+def empty(shape, dtype=None, device=None, requires_grad=False):
+    return Tensor(np.empty(shape),
+                  dtype=dtype,
+                  device=device,
+                  requires_grad=requires_grad)

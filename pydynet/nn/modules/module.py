@@ -1,12 +1,16 @@
 from collections import OrderedDict
+from copy import deepcopy
+
 from ..parameter import Parameter
 from ...tensor import Tensor
 from ...autograd import set_grad_enabled
+from ...cuda import Device, current_device
 
 
 class Module:
     def __init__(self) -> None:
         self._train = True
+        self.device = Device("cpu")
         self._parameters = OrderedDict()
 
     def __call__(self, *x) -> Tensor:
@@ -52,6 +56,28 @@ class Module:
 
     def eval(self):
         return self.train(False)
+
+    def to(self, device):
+        device = Device(device)
+        if self.device == device:
+            return self
+        else:
+            module = deepcopy(self)
+            module.move(device)
+            return module
+
+    def move(self, device):
+        device = Device(device)
+        for module in self.__dict__.values():
+            if isinstance(module, Module):
+                module.move(device)
+
+    def cuda(self):
+        device = current_device()
+        return self.to(device)
+
+    def cpu(self):
+        return self.to('cpu')
 
 
 class Sequential(Module):
