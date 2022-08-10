@@ -25,7 +25,7 @@
 
 ## Overview
 
-PyDyNet也是纯NumPy(0.0.6版本后加入CuPy，其用法和NumPy一致)实现的神经网络，语法受PyTorch的启发，大致结构如下：
+PyDyNet也是纯NumPy(0.0.7版本后加入CuPy，其用法和NumPy一致)实现的神经网络，语法受PyTorch的启发，大致结构如下：
 
 ```mermaid
 graph BT
