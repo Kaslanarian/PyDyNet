@@ -22,6 +22,7 @@
 - 7.28: ver 0.0.6 加入no_grad方法，可以像pytorch一样禁止自动微分，比如`@no_grad()`和`with no_grad()`，详见[autograd.py](/pydynet/autograd.py);
 - 8.09: ver 0.0.7 基于[cupy](https://cupy.dev/)，PyDyNet现在可以使用显卡加速训练，用法与PyTorch一致，详见[tests](./tests)中`cu*.py`；
 - 8.18: ver 0.0.8 加入学习率调整策略，实现了训练过程中自动调节学习率；
+- 10.21: ver 0.0.9 加入tensor的split方法，基于此改进了RNN；
 - ...
 
 ## Overview
