@@ -168,6 +168,21 @@ class Tensor:
     def transpose(self, *axes):
         return transpose(self, axes if len(axes) != 0 else None)
 
+    def swapaxes(self, axis1: int, axis2: int):
+        return swapaxes(self, axis1, axis2)
+
+    def vsplit(self, indices_or_sections: Union[int, Tuple]):
+        return vsplit(self, indices_or_sections)
+
+    def hsplit(self, indices_or_sections: Union[int, Tuple]):
+        return hsplit(self, indices_or_sections)
+
+    def dsplit(self, indices_or_sections: Union[int, Tuple]):
+        return dsplit(self, indices_or_sections)
+
+    def split(self, indices_or_sections: Union[int, Tuple], axis=0):
+        return split(self, indices_or_sections, axis=0)
+
     def max(
         self,
         axis: Union[int, Tuple, None] = None,
@@ -960,6 +975,29 @@ class transpose(UnaryOperator):
         return grad.transpose(tuple(np.argsort(self.axes)))
 
 
+class swapaxes(UnaryOperator):
+    '''
+    张量交换轴算子
+
+    Parameters
+    ----------
+    axis1 : int
+        第一个axis;
+    axis2 : int
+        第二个axis.
+    '''
+    def __init__(self, x: Tensor, axis1: int, axis2: int) -> None:
+        self.axis1 = axis1
+        self.axis2 = axis2
+        super().__init__(x)
+
+    def forward(self, x: Tensor) -> np.ndarray:
+        return x.data.swapaxes(self.axis1, self.axis2)
+
+    def grad_fn(self, x: Tensor, grad: np.ndarray) -> np.ndarray:
+        return grad.swapaxes(self.axis1, self.axis2)
+
+
 class get_slice(UnaryOperator):
     '''
     切片算子，为Tensor类提供索引和切片接口
@@ -1039,6 +1077,170 @@ class concatenate(Tensor):
         slc = [slice(None)] * grad.ndim
         slc[self.axis] = slice(start, end)
         return grad[tuple(slc)]
+
+
+def vsplit(
+    x: Tensor,
+    indices_or_sections: Union[int, Tuple],
+) -> List[Tensor]:
+    if not isinstance(x, Tensor):
+        x = Tensor(x)
+
+    try:
+        len(indices_or_sections)
+    except TypeError:
+        sections = indices_or_sections
+        N = x.shape[0]
+        assert N % sections == 0, 'array split does not result in an equal division'
+
+    Ntotal = x.shape[0]
+    try:
+        # handle array case.
+        Nsections = len(indices_or_sections) + 1
+        div_points = [0] + list(indices_or_sections) + [Ntotal]
+    except TypeError:
+        # indices_or_sections is a scalar, not an array.
+        Nsections = int(indices_or_sections)
+        if Nsections <= 0:
+            raise ValueError(
+                'number sections must be larger than 0.') from None
+        Neach_section, extras = divmod(Ntotal, Nsections)
+        section_sizes = ([0] + extras * [Neach_section + 1] +
+                         (Nsections - extras) * [Neach_section])
+        div_points = np.array(section_sizes, dtype=np.intp).cumsum()
+
+    sub_tensors = []
+    for i in range(Nsections):
+        st = div_points[i]
+        end = div_points[i + 1]
+        sub_tensors.append(x[st:end])
+
+    return sub_tensors
+
+
+def hsplit(
+    x: Tensor,
+    indices_or_sections: Union[int, Tuple],
+) -> List[Tensor]:
+    if not isinstance(x, Tensor):
+        x = Tensor(x)
+
+    try:
+        len(indices_or_sections)
+    except TypeError:
+        sections = indices_or_sections
+        N = x.shape[1]
+        assert N % sections == 0, 'array split does not result in an equal division'
+
+    Ntotal = x.shape[1]
+    try:
+        # handle array case.
+        Nsections = len(indices_or_sections) + 1
+        div_points = [0] + list(indices_or_sections) + [Ntotal]
+    except TypeError:
+        # indices_or_sections is a scalar, not an array.
+        Nsections = int(indices_or_sections)
+        if Nsections <= 0:
+            raise ValueError(
+                'number sections must be larger than 0.') from None
+        Neach_section, extras = divmod(Ntotal, Nsections)
+        section_sizes = ([0] + extras * [Neach_section + 1] +
+                         (Nsections - extras) * [Neach_section])
+        div_points = np.array(section_sizes, dtype=np.intp).cumsum()
+
+    sub_tensors = []
+    for i in range(Nsections):
+        st = div_points[i]
+        end = div_points[i + 1]
+        sub_tensors.append(x[:, st:end])
+
+    return sub_tensors
+
+
+def dsplit(
+    x: Tensor,
+    indices_or_sections: Union[int, Tuple],
+) -> List[Tensor]:
+    if not isinstance(x, Tensor):
+        x = Tensor(x)
+
+    try:
+        len(indices_or_sections)
+    except TypeError:
+        sections = indices_or_sections
+        N = x.shape[2]
+        assert N % sections == 0, 'array split does not result in an equal division'
+
+    Ntotal = x.shape[2]
+    try:
+        # handle array case.
+        Nsections = len(indices_or_sections) + 1
+        div_points = [0] + list(indices_or_sections) + [Ntotal]
+    except TypeError:
+        # indices_or_sections is a scalar, not an array.
+        Nsections = int(indices_or_sections)
+        if Nsections <= 0:
+            raise ValueError(
+                'number sections must be larger than 0.') from None
+        Neach_section, extras = divmod(Ntotal, Nsections)
+        section_sizes = ([0] + extras * [Neach_section + 1] +
+                         (Nsections - extras) * [Neach_section])
+        div_points = np.array(section_sizes, dtype=np.intp).cumsum()
+
+    sub_tensors = []
+    for i in range(Nsections):
+        st = div_points[i]
+        end = div_points[i + 1]
+        sub_tensors.append(x[:, :, st:end])
+
+    return sub_tensors
+
+
+def split(
+    x: Tensor,
+    indices_or_sections: Union[int, Tuple],
+    axis: int = 0,
+) -> List[Tensor]:
+    if not isinstance(x, Tensor):
+        x = Tensor(x)
+
+    if axis == 0 or axis == -x.ndim:
+        return vsplit(x, indices_or_sections)
+    elif axis == 1 or axis == -x.ndim + 1:
+        return hsplit(x, indices_or_sections)
+    elif axis == 2 or axis == -x.ndim + 2:
+        return dsplit(x, indices_or_sections)
+
+    try:
+        len(indices_or_sections)
+    except TypeError:
+        sections = indices_or_sections
+        N = x.shape[axis]
+        assert N % sections == 0, 'array split does not result in an equal division'
+
+    Ntotal = x.shape[axis]
+    try:
+        # handle array case.
+        Nsections = len(indices_or_sections) + 1
+        div_points = [0] + list(indices_or_sections) + [Ntotal]
+    except TypeError:
+        # indices_or_sections is a scalar, not an array.
+        Nsections = int(indices_or_sections)
+        if Nsections <= 0:
+            raise ValueError(
+                'number sections must be larger than 0.') from None
+        Neach_section, extras = divmod(Ntotal, Nsections)
+        section_sizes = ([0] + extras * [Neach_section + 1] +
+                         (Nsections - extras) * [Neach_section])
+        div_points = np.array(section_sizes, dtype=np.intp).cumsum()
+
+    sub_tensors = []
+    stensor = swapaxes(x, 0, axis)
+    for i in range(Nsections):
+        st = div_points[i]
+        end = div_points[i + 1]
+        sub_tensors.append(swapaxes(stensor[st:end], axis, 0))
+    return sub_tensors
 
 
 # 一些包装的特殊矩阵

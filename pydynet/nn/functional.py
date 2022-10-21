@@ -1,6 +1,14 @@
 import numpy as np
+from typing import Tuple, Union
 
 from .. import tensor
+
+
+def size_handle(input: Union[int, Tuple[int, int]]):
+    if type(input) is int:
+        return input, input
+    assert type(input) in {list, tuple} and len(input) == 2
+    return input
 
 
 def linear(x: tensor.Tensor, weight: tensor.Tensor, bias: tensor.Tensor):
@@ -128,7 +136,7 @@ def conv1d(
     kernel_size = kernel.shape[-1]
     pad_x = __pad1d(x, padding)
     col = __im2col1d(pad_x, kernel_size, stride)
-    return (col @ kernel.transpose(1, 2, 0)).sum(1).transpose(0, 2, 1)
+    return (col @ kernel.transpose(1, 2, 0)).sum(1).swapaxes(1, 2)
 
 
 def max_pool1d(

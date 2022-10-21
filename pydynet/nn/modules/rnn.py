@@ -58,7 +58,7 @@ class RNN(Module):
 
         if self.batch_first and x.ndim == 3:
             # x.ndim的数据是(seq_len, input_size)不需要变换
-            x = x.transpose(1, 0, 2)
+            x = x.swapaxes(0, 1)
 
         h_list = []
         if self.bidirectional:
@@ -84,7 +84,7 @@ class RNN(Module):
             output = tensor.concatenate(h_list)
 
         if self.batch_first and x.ndim == 3:
-            output = output.transpose(1, 0, 2)
+            output = output.swapaxes(0, 1)
         return output
 
     def __repr__(self) -> str:
@@ -154,7 +154,7 @@ class LSTM(Module):
             h_reverse = tensor.zeros(self.hidden_size, **self.kwargs)
 
         if self.batch_first and x.ndim == 3:
-            x = x.transpose(1, 0, 2)
+            x = x.swapaxes(0, 1)
 
         h_list = []
 
@@ -162,28 +162,20 @@ class LSTM(Module):
             h_reverse_list = []
             for id in range(x.shape[0]):
                 affine = x[id:id + 1] @ self.Wx + h @ self.Wh + self.bias
-                f_i_o = affine[..., :3 * self.hidden_size]
-                g = affine[..., -self.hidden_size:]
-                sigma_fio = F.sigmoid(f_i_o)
-                g = F.tanh(g)
-                f = sigma_fio[..., :self.hidden_size]
-                i = sigma_fio[..., self.hidden_size:2 * self.hidden_size]
-                o = sigma_fio[..., -self.hidden_size:]
-                c = tensor.sum(f * c + g * i, (0, 1))
+                f_i_o, g = tensor.split(affine, [3 * self.hidden_size], axis=1)
+                sigma_fio, tanh_g = F.sigmoid(f_i_o), F.tanh(g)
+                f, i, o = tensor.split(sigma_fio, 3, axis=1)
+                c = tensor.mean(f * c + tanh_g * i, (0, 1))
                 h = o * F.tanh(c)
                 h_list.append(h)
 
                 affine = x[
                     x.shape[0] - id - 1:x.shape[0] -
                     id] @ self.Wx_reverse + h_reverse @ self.Wh_reverse + self.bias_reverse
-                f_i_o = affine[..., :3 * self.hidden_size]
-                g = affine[..., -self.hidden_size:]
-                sigma_fio = F.sigmoid(f_i_o)
-                g = F.tanh(g)
-                f = sigma_fio[..., :self.hidden_size]
-                i = sigma_fio[..., self.hidden_size:2 * self.hidden_size]
-                o = sigma_fio[..., -self.hidden_size:]
-                c = tensor.sum(f * c_reverse + g * i, (0, 1))
+                f_i_o, g = tensor.split(affine, [3 * self.hidden_size], axis=1)
+                sigma_fio, tanh_g = F.sigmoid(f_i_o), F.tanh(g)
+                f, i, o = tensor.split(sigma_fio, 3, axis=1)
+                c = tensor.mean(f * c_reverse + tanh_g * i, (0, 1))
                 h_reverse = o * F.tanh(c_reverse)
                 h_reverse_list.append(h_reverse)
 
@@ -197,20 +189,17 @@ class LSTM(Module):
         else:
             for id in range(x.shape[0]):
                 affine = x[id:id + 1] @ self.Wx + h @ self.Wh + self.bias
-                f_i_o = affine[..., :3 * self.hidden_size]
-                g = affine[..., -self.hidden_size:]
-                sigma_fio = F.sigmoid(f_i_o)
-                g = F.tanh(g)
-                f = sigma_fio[..., :self.hidden_size]
-                i = sigma_fio[..., self.hidden_size:2 * self.hidden_size]
-                o = sigma_fio[..., -self.hidden_size:]
-                c = tensor.mean(f * c + g * i, (0, 1))
+                f_i_o, g = tensor.split(affine, [3 * self.hidden_size], axis=1)
+                sigma_fio, tanh_g = F.sigmoid(f_i_o), F.tanh(g)
+                f, i, o = tensor.split(sigma_fio, 3, axis=1)
+                c = tensor.mean(f * c + tanh_g * i, (0, 1))
                 h = o * F.tanh(c)
                 h_list.append(h)
+
             output = tensor.concatenate(h_list)
 
         if self.batch_first and x.ndim == 3:
-            output = output.transpose(1, 0, 2)
+            output = output.swapaxes(0, 1)
         return output
 
     def __repr__(self) -> str:
@@ -288,7 +277,7 @@ class GRU(Module):
 
         if self.batch_first and x.ndim == 3:
             # x.ndim的数据是(seq_len, input_size)不需要变换
-            x = x.transpose(1, 0, 2)
+            x = x.swapaxes(0, 1)
 
         h_list = []
 
@@ -334,7 +323,7 @@ class GRU(Module):
             output = tensor.concatenate(h_list)
 
         if self.batch_first and x.ndim == 3:
-            output = output.transpose(1, 0, 2)
+            output = output.swapaxes(0, 1)
         return output
 
     def __repr__(self) -> str:

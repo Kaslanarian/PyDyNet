@@ -1,3 +1,10 @@
+'''学习率调节器类，我们目前实现了\n
+- ExponentialLR;\n
+- StepLR;\n
+- MultiStepLR;\n
+- CosineAnnealingLR.\n
+'''
+
 from typing import List
 from .optimizer import Optimizer
 import weakref

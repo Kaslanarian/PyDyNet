@@ -5,6 +5,22 @@ from ...cuda import Device
 
 
 class BatchNorm1d(Module):
+    '''
+    一维Batch Normalization层
+
+    Parameters
+    ----------
+    num_features : int
+        输入特征数.
+    eps : float, default=1e-5
+        防止除数为0的极小项.
+    momentum : float, default=0.5
+        计算累积均值和方差的动量项.
+    device : Optional[Device], default=None
+        层数据所在的设备.
+    dtype : default=Nonr
+        层数据的类型.
+    '''
     def __init__(
         self,
         num_features: int,
@@ -56,6 +72,22 @@ class BatchNorm1d(Module):
 
 
 class BatchNorm2d(Module):
+    '''
+    二维Batch Normalization层
+
+    Parameters
+    ----------
+    num_features : int
+        输入特征数(通道数).
+    eps : float, default=1e-5
+        防止除数为0的极小项.
+    momentum : float, default=0.5
+        计算累积均值和方差的动量项.
+    device : Optional[Device], default=None
+        层数据所在的设备.
+    dtype : default=Nonr
+        层数据的类型.
+    '''
     def __init__(
         self,
         num_features: int,

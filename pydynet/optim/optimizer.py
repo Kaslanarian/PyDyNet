@@ -10,6 +10,7 @@ Reference
 博客: https://welts.xyz/2021/08/20/gd/.
 '''
 
+from math import sqrt
 from typing import List, Tuple
 from ..tensor import Tensor
 
@@ -104,13 +105,26 @@ class Adagrad(Optimizer):
 
 
 class Adadelta(Optimizer):
+    '''
+    Adadelta优化器
+    
+    params : List[Parameter]
+        待优化参数;
+    lr : float, default=1e-2.
+        学习率;
+    rho :float, default=
+    weight_decay : float, default=0.
+        权重衰减系数.
+    eps : float, default=1e-10
+        epsilon.
+    '''
     def __init__(
         self,
         params: List[Tensor],
         lr: float = 1.0,
         rho: float = 0.9,
-        eps: float = 1e-6,
         weight_decay: float = 0,
+        eps: float = 1e-6,
     ) -> None:
         super().__init__(params)
         self.lr = lr
@@ -151,7 +165,7 @@ class Adam(Optimizer):
             grad = self.params[i].grad + self.weight_decay * self.params[i].data
             self.m[i] = self.beta1 * self.m[i] + (1 - self.beta1) * grad
             self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * grad**2
-            m_t = self.m[i] / (1 - self.beta1**self.t)
-            v_t = self.v[i] / (1 - self.beta2**self.t)
-            self.params[i].data -= self.lr * m_t / (v_t**0.5 + self.eps)
+            a_t = sqrt(1 - self.beta2**self.t) / (1 - self.beta1**self.t)
+            self.params[i].data -= self.lr * a_t * self.m[i] / (
+                self.v[i]**0.5 + self.eps)
         self.t += 1
