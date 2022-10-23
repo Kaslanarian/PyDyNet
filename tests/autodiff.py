@@ -1,5 +1,4 @@
-import pydynet
-from pydynet.tensor import Tensor
+import pydynet as pdn
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -9,14 +8,14 @@ try:
 except:
     pass
 
-x = Tensor(1., requires_grad=True)
+x = pdn.Tensor(1., requires_grad=True)
 lr = 2
 
 x_list = []
 y_list = []
 for i in range(20):
     x_list.append(x.data.copy())
-    y = pydynet.log(pydynet.square(x - 7) + 10)
+    y = pdn.log(pdn.square(x - 7) + 10)
     y_list.append(y.data)
     x.zero_grad()
     y.backward()

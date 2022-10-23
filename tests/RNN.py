@@ -1,6 +1,5 @@
 from tqdm import tqdm
 from pydynet.tensor import Tensor
-import pydynet.nn.functional as F
 import pydynet.nn as nn
 from pydynet.optim import Adam
 from pydynet.data import data_loader
@@ -45,8 +44,8 @@ class Net(nn.Module):
         self.fc = nn.Linear(64, 10)
 
     def forward(self, x):
-        x = self.rnn(x)
-        x = self.fc(x[:, -1, :])
+        x, hn = self.rnn(x)
+        x = self.fc(hn.reshape(hn.shape[0], -1))
         return x
 
 

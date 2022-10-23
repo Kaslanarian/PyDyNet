@@ -1,4 +1,5 @@
 from ..tensor import Tensor
+from ..autograd import no_grad
 from numpy.random import uniform, normal
 import math
 
@@ -26,16 +27,17 @@ def _calculate_fan(tensor: Tensor):
     return fan_in, fan_out
 
 
+@no_grad()
 def uniform_(tensor: Tensor, a=0., b=1.) -> Tensor:
     tensor.data = uniform(a, b, tensor.shape)
     return tensor
 
-
+@no_grad()
 def normal_(tensor: Tensor, mean=0., std=1.) -> Tensor:
     tensor.data = normal(mean, std, size=tensor.shape)
     return tensor
 
-
+@no_grad()
 def constant_(tensor: Tensor, val: float) -> Tensor:
     tensor.data[...] = val
     return tensor

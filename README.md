@@ -11,7 +11,8 @@
 ![](https://img.shields.io/github/stars/Kaslanarian/PyDyNet?style=social)
 ![](https://img.shields.io/github/forks/Kaslanarian/PyDyNet?style=social)
 
-## Update
+<details><summary>更新日志</summary>
+<p>
 
 - 5.10: ver 0.0.1 修改损失函数的定义方式：加入reduction机制，加入Embedding;
 - 5.15: ver 0.0.2 重构了RNN, LSTM和GRU，支持双向;
@@ -23,7 +24,11 @@
 - 8.09: ver 0.0.7 基于[cupy](https://cupy.dev/)，PyDyNet现在可以使用显卡加速训练，用法与PyTorch一致，详见[tests](./tests)中`cu*.py`；
 - 8.18: ver 0.0.8 加入学习率调整策略，实现了训练过程中自动调节学习率；
 - 10.21: ver 0.0.9 加入tensor的split方法，基于此改进了RNN；
+- 10.23: ver 0.0.10 重写RNN, LSTM和GRU，支持多层双向；
 - ...
+
+</p>
+</details>
 
 ## Overview
 
@@ -60,11 +65,12 @@ pydynet
 │   │   ├── __init__.py
 │   │   ├── activation.py # 激活函数
 │   │   ├── batchnorm.py  # BN
-│   │   ├── conv.py       # 卷积和池化
+│   │   ├── conv.py       # 卷积
 │   │   ├── dropout.py    # Dropout
 │   │   ├── linear.py     # 线性层
 │   │   ├── loss.py       # 损失函数类
 │   │   ├── module.py     # Module基类，包括Sequential
+│   │   ├── pool.py       # 池化
 │   │   └── rnn.py        # RNN
 │   └── parameter.py      # 参数化类
 ├── optim
@@ -95,12 +101,12 @@ pydynet
    <p>
 
    ```python
-   import pydynet
+   import pydynet as pdn
    from pydynet import Tensor
 
    x = Tensor([1, 2, 3])
-   y = pydynet.exp(x) + x
-   z = pydynet.sum(x)
+   y = pdn.exp(x) + x
+   z = pdn.sum(x)
    print(z.data) # 36.192...
    ```
    </p>
@@ -111,12 +117,12 @@ pydynet
    <p>
 
    ```python
-   import pydynet
+   import pydynet as pdn
    from pydynet import Tensor
 
    x = Tensor([1., 2., 3.], requires_grad=True)
-   y = pydynet.log(x) + x
-   z = pydynet.sum(y)
+   y = pdn.log(x) + x
+   z = pdn.sum(y)
 
    z.backward()
    print(x.grad) # [2., 1.5, 1.33333333]
@@ -129,10 +135,10 @@ pydynet
    <p>
 
    ```python
-   import pydynet
+   import pydynet as pdn
 
-   def simple_sigmoid(x: pydynet.Tensor):
-       return 1 / (1 + pydynet.exp(-x))
+   def simple_sigmoid(x: pdn.Tensor):
+       return 1 / (1 + pdn.exp(-x))
    ```
    </p>
    </details>
@@ -211,8 +217,8 @@ pydynet
    </p>
    </details>
 8. Dropout机制，Batch Normalization机制，以及将网络划分成训练阶段和评估阶段；
-9.  基于im2col高效实现Conv1d, Conv2d, max_pool1d和max_pool2d，从而实现CNN；
-10. 支持多层的**双向**RNN，LSTM和GRU；
+9. 基于im2col高效实现Conv1d, Conv2d, max_pool1d和max_pool2d，从而实现CNN；
+10. 支持多层的**多层双向**RNN，LSTM和GRU；
 11. 多种初始化方式，包括Kaiming和Xavier；
 12. 基于cupy实现了显卡计算和训练：
     <details><summary>Example</summary>

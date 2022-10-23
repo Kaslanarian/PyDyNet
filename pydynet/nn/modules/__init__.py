@@ -5,11 +5,12 @@ from .dropout import Dropout
 from .linear import Linear
 from .loss import MSELoss, NLLLoss, CrossEntropyLoss
 from .module import Module, Sequential
-from .rnn import RNN, LSTM, GRU
+from .rnn import RNN, LSTM, GRU, RNNCell, LSTMCell, GRUCell
 
 __all__ = [
     "Sigmoid", "Tanh", "ReLU", "LeakyReLU", "Softmax", "BatchNorm1d",
     "BatchNorm2d", "Conv1d", "Conv2d", "MaxPool1d", "MaxPool2d", "AvgPool1d",
     "AvgPool2d", "Dropout", "Linear", "MSELoss", "NLLLoss", "CrossEntropyLoss",
-    "Module", "Sequential", "RNN", "LSTM", "GRU"
+    "Module", "Sequential", "RNN", "LSTM", "GRU", "RNNCell", "LSTMCell",
+    "GRUCell"
 ]

@@ -1243,6 +1243,22 @@ def split(
     return sub_tensors
 
 
+def unsqueeze(x: Tensor, axis: Any):
+    '''等价于numpy的expand_dims，因此我们借用了expand_dims的源码'''
+    from numpy.core.numeric import normalize_axis_tuple
+    if type(axis) not in (tuple, list):
+        axis = (axis, )
+
+    out_ndim = len(axis) + x.ndim
+    axis = normalize_axis_tuple(axis, out_ndim)
+
+    shape_it = iter(x.shape)
+    shape = [1 if ax in axis else next(shape_it) for ax in range(out_ndim)]
+    return x.reshape(*shape)
+
+
+
+
 # 一些包装的特殊矩阵
 def zeros(shape, dtype=None, device=None, requires_grad=False):
     '''全0张量

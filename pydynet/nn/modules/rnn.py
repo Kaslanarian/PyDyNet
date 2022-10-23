@@ -1,108 +1,347 @@
-from typing import Literal
 from .module import Module
+from .. import init
 from .. import functional as F
 from ..parameter import Parameter
 from ... import tensor
 from ...cuda import Device
 
+from typing import Literal, Optional, Tuple, List
+import math
 
-class RNN(Module):
-    '''单层RNN，不像Pytorch那样可以指定num_layers进行多层堆叠，我们的RNN是单层可双向的，'''
+
+class RNNCell(Module):
     def __init__(
         self,
         input_size: int,
         hidden_size: int,
+        bias: bool = True,
         nonlinearity: Literal['tanh', 'relu'] = 'tanh',
-        batch_first: bool = False,
-        bidirectional: bool = False,
         device=None,
         dtype=None,
     ) -> None:
         super().__init__()
-        kwargs = {"device": Device(device), "dtype": dtype}
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.batch_first = batch_first
-        self.bidirectional = bidirectional
+        self.kwargs = {"device": Device(device), "dtype": dtype}
         self.nonlinearity = nonlinearity
-        self.fn = {
-            "tanh": F.tanh,
-            "relu": F.relu,
-        }[nonlinearity]
-        scale = 1 / self.hidden_size**0.5
-        low_high = (-scale, scale)
+        self.fn = {'tanh': F.tanh, 'relu': F.relu}[nonlinearity]
 
         self.Wx = Parameter(
-            tensor.uniform(*low_high, (input_size, hidden_size), **kwargs))
+            tensor.empty(
+                (input_size, hidden_size),
+                **self.kwargs,
+            ))
         self.Wh = Parameter(
-            tensor.uniform(*low_high, (hidden_size, hidden_size), **kwargs))
-        self.bias = Parameter(tensor.uniform(*low_high, hidden_size, **kwargs))
+            tensor.empty(
+                (hidden_size, hidden_size),
+                **self.kwargs,
+            ))
+        if bias:
+            self.bias = Parameter(tensor.empty(self.hidden_size,
+                                               **self.kwargs))
+        self.has_bias = bias
+        self.reset_paramters()
 
-        if self.bidirectional:
-            self.Wx_reverse = Parameter(
-                tensor.uniform(*low_high, (input_size, hidden_size), **kwargs))
-            self.Wh_reverse = Parameter(
-                tensor.uniform(*low_high, (hidden_size, hidden_size),
-                               **kwargs))
-            self.bias_reverse = Parameter(
-                tensor.uniform(*low_high, hidden_size, **kwargs))
-
-        self.kwargs = kwargs
-
-    def forward(self, x: tensor.Tensor, h=(None, None)):
-        h, h_reverse = h
+    def forward(self, x, h=None):
         if h is None:
-            h = tensor.zeros(self.hidden_size, **self.kwargs)
-        if h_reverse is None:
-            h_reverse = tensor.zeros(self.hidden_size, **self.kwargs)
-
-        if self.batch_first and x.ndim == 3:
-            # x.ndim的数据是(seq_len, input_size)不需要变换
-            x = x.swapaxes(0, 1)
-
-        h_list = []
-        if self.bidirectional:
-            h_reverse_list = []
-            for i in range(x.shape[0]):
-                h = self.fn(x[i:i + 1] @ self.Wx + h @ self.Wh + self.bias)
-                h_list.append(h)
-                h_reverse = self.fn(
-                    x[x.shape[0] - i - 1:x.shape[0] -
-                      i]) @ self.Wx + h_reverse @ self.Wh + self.bias_reverse
-                h_reverse_list.append(h_reverse)
-            output = tensor.concatenate(
-                [
-                    tensor.concatenate(h_list),
-                    tensor.concatenate(h_reverse_list)
-                ],
-                axis=-1,
-            )
+            h = self.init_hidden(x)
         else:
-            for i in range(x.shape[0]):
-                h = self.fn(x[i:i + 1] @ self.Wx + h @ self.Wh + self.bias)
-                h_list.append(h)
-            output = tensor.concatenate(h_list)
+            assert (x.ndim == 1 and h.shape == (self.hidden_size, )) or (
+                x.ndim == 2 and h.shape
+                == (x.shape[0], self.hidden_size)), "Wrong hidden state input!"
 
-        if self.batch_first and x.ndim == 3:
-            output = output.swapaxes(0, 1)
-        return output
+        lin = x @ self.Wx + h @ self.Wh
+        if self.has_bias:
+            lin = lin + self.bias
+        return self.fn(lin)
+
+    def reset_paramters(self):
+        bound = math.sqrt(1 / self.hidden_size)
+        init.uniform_(self.Wx, -bound, bound)
+        init.uniform_(self.Wh, -bound, bound)
+        if self.has_bias:
+            init.uniform_(self.bias, -bound, bound)
+
+    def init_hidden(self, x):
+        assert x.ndim in {1, 2}
+        if x.ndim == 1:
+            return tensor.zeros(self.hidden_size, **self.kwargs)
+        else:
+            batch_size = x.shape[0]
+            return tensor.zeros((batch_size, self.hidden_size), **self.kwargs)
 
     def __repr__(self) -> str:
-        return "{}(input_size={}, hidden_size={}, nonlinearity={}, batch_first={}, bidirectional={})".format(
-            self.__class__.__name__, self.input_size, self.hidden_size,
-            self.nonlinearity, self.batch_first, self.bidirectional)
+        return "{}({}, {}, bias={}, nonlinearity={})".format(
+            self.__class__.__name__,
+            self.input_size,
+            self.hidden_size,
+            self.has_bias,
+            self.nonlinearity,
+        )
 
     def move(self, device):
         self.device = device
         self.kwargs['device'] = self.device
         self.Wx = self.Wx.to(self.device)
         self.Wh = self.Wh.to(self.device)
-        self.bias = self.bias.to(self.device)
+        if self.has_bias:
+            self.bias = self.bias.to(self.device)
 
+
+class RNN(Module):
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        num_layers: int = 1,
+        nonlinearity: Literal['tanh', 'relu'] = 'tanh',
+        bias: bool = True,
+        batch_first: bool = False,
+        bidirectional: bool = False,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.nonlinearity = nonlinearity
+        self.has_bias = bias
+        self.batch_first = batch_first
+        self.bidirectional = bidirectional
+        self.kwargs = {"device": Device(device), "dtype": dtype}
+
+        assert num_layers > 0
+        size_list = [input_size] + [hidden_size] * (num_layers - 1)
+        self.RNNCells: List[RNNCell] = []
+        for i in range(num_layers):
+            cell = RNNCell(
+                size_list[i],
+                hidden_size,
+                bias,
+                nonlinearity,
+                **self.kwargs,
+            )
+            setattr(self, 'rnn_{}'.format(i), cell)
+            self.RNNCells.append(cell)
         if self.bidirectional:
-            self.Wx_reverse = self.Wx_reverse.to(self.device)
-            self.Wh_reverse = self.Wh_reverse.to(self.device)
-            self.bias_reverse = self.bias_reverse.to(self.device)
+            self.rRNNCells: List[RNNCell] = []
+            for i in range(num_layers):
+                cell = RNNCell(
+                    size_list[i],
+                    hidden_size,
+                    bias,
+                    nonlinearity,
+                    **self.kwargs,
+                )
+                setattr(self, 'rrnn_{}'.format(i), cell)
+                self.rRNNCells.append(cell)
+
+    def forward(self, x, h=None):
+        if self.batch_first and x.ndim == 3:
+            x = x.swapaxes(0, 1)
+
+        if h is None:
+            h = self.init_hidden(x)
+        else:
+            d = 2 if self.bidirectional else 1
+            assert (x.ndim == 2
+                    and h.shape == (d * self.num_layers, self.hidden_size)
+                    ) or (x.ndim == 3 and h.shape
+                          == (d * self.num_layers, x.shape[1],
+                              self.hidden_size)), "Wrong hidden state input!"
+
+        if self.num_layers == 1 and not self.bidirectional:
+            h_list = self.cell_forward(self.RNNCells[0], x, h[0])
+            output = tensor.concatenate(h_list)
+            hn = h_list[-1]
+
+        elif self.num_layers == 1 and self.bidirectional:
+            h_list = self.cell_forward(self.RNNCells[0], x, h[0])
+            hr_list = self.cell_forward(self.rRNNCells[0], x[::-1], h[1])
+            output = tensor.concatenate(
+                [
+                    tensor.concatenate(h_list),
+                    tensor.concatenate(hr_list[::-1])
+                ],
+                axis=-1,
+            )
+            hn = tensor.concatenate([h_list[-1], hr_list[-1]])
+
+        elif self.num_layers > 1 and not self.bidirectional:
+            hn_list = []
+            for i in range(self.num_layers):
+                h_list = self.cell_forward(
+                    self.RNNCells[i],
+                    x if i == 0 else tensor.concatenate(h_list),
+                    h[i],
+                )
+                hn_list.append(h_list[-1])
+            output = tensor.concatenate(h_list)
+            hn = tensor.concatenate(hn_list)
+
+        else:
+            hn_list = []
+            hrn_list = []
+            for i in range(self.num_layers):
+                h_list = self.cell_forward(
+                    self.RNNCells[i],
+                    x if i == 0 else tensor.concatenate(h_list),
+                    h[i],
+                )
+                hr_list = self.cell_forward(
+                    self.rRNNCells[i],
+                    x[::-1] if i == 0 else tensor.concatenate(hr_list),
+                    h[i + self.num_layers],
+                )
+                hn_list.append(h_list[-1])
+                hrn_list.append(hr_list[-1])
+            output = tensor.concatenate(
+                [
+                    tensor.concatenate(h_list),
+                    tensor.concatenate(hr_list[::-1])
+                ],
+                axis=-1,
+            )
+            hn = tensor.concatenate(hn_list + hrn_list)
+
+        if self.batch_first and x.ndim == 3:
+            output = output.swapaxes(0, 1)
+            hn = hn.swapaxes(0, 1)
+        return output, hn
+
+    def reset_parameters(self):
+        for i in range(self.num_layers):
+            self.RNNCells[i].reset_paramters()
+        if self.bidirectional:
+            for i in range(self.num_layers):
+                self.rRNNCells[i].reset_paramters()
+
+    def init_hidden(self, x):
+        assert x.ndim in {2, 3}
+        d = 2 if self.bidirectional else 1
+        if x.ndim == 2:
+            return tensor.zeros(
+                (d * self.num_layers, self.hidden_size),
+                **self.kwargs,
+            )
+        else:
+            batch_size = x.shape[1]
+            return tensor.zeros(
+                (d * self.num_layers, batch_size, self.hidden_size),
+                **self.kwargs,
+            )
+
+    def cell_forward(self, cell: RNNCell, x, h):
+        seq_len = x.shape[0]
+        h_list = []
+        for i in range(seq_len):
+            h = cell(x[i], h)
+            h_list.append(tensor.unsqueeze(h, axis=0))
+        return h_list
+
+    def __repr__(self) -> str:
+        return "{}({}, {}, num_layers={}, nonlinearity={}, bias={}, batch_first={}, bidirectional={})".format(
+            self.__class__.__name__,
+            self.input_size,
+            self.hidden_size,
+            self.num_layers,
+            self.nonlinearity,
+            self.has_bias,
+            self.batch_first,
+            self.bidirectional,
+        )
+
+    def move(self, device):
+        for i in range(self.num_layers):
+            self.RNNCells[i] = self.RNNCells[i].move(device)
+        if self.bidirectional:
+            for i in range(self.num_layers):
+                self.rRNNCells[i] = self.rRNNCells[i].move(device)
+
+
+class LSTMCell(Module):
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        bias: bool = True,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.kwargs = {"device": Device(device), "dtype": dtype}
+
+        self.Wx = Parameter(
+            tensor.empty(
+                (input_size, 4 * hidden_size),
+                **self.kwargs,
+            ))
+        self.Wh = Parameter(
+            tensor.empty(
+                (hidden_size, 4 * hidden_size),
+                **self.kwargs,
+            ))
+        if bias:
+            self.bias = Parameter(
+                tensor.empty(4 * self.hidden_size, **self.kwargs))
+        self.has_bias = bias
+        self.reset_paramters()
+
+    def forward(self, x, hx: Optional[Tuple] = None):
+        if hx is None:
+            h = self.init_hidden(x)
+            c = self.init_hidden(x)
+        else:
+            h, c = hx
+            assert (x.ndim == 1 and h.shape == (self.hidden_size, )) or (
+                x.ndim == 2 and h.shape
+                == (x.shape[0], self.hidden_size)), "Wrong hidden state input!"
+            assert (x.ndim == 1 and c.shape == (self.hidden_size, )) or (
+                x.ndim == 2 and c.shape
+                == (x.shape[0], self.hidden_size)), "Wrong cell state input!"
+        lin = x @ self.Wx + h @ self.Wh
+        if self.has_bias:
+            lin = lin + self.bias
+        fio, g = tensor.hsplit(lin, [3 * self.hidden_size])
+        sig_fio, tanh_g = F.sigmoid(fio), F.tanh(g)
+        f, i, o = tensor.hsplit(sig_fio, 3)
+        c = f * c + i * tanh_g
+        h = o * F.tanh(c)
+        return h, c
+
+    def init_hidden(self, x):
+        assert x.ndim in {1, 2}
+        if x.ndim == 1:
+            return tensor.zeros(self.hidden_size, **self.kwargs)
+        else:
+            batch_size = x.shape[0]
+            return tensor.zeros((batch_size, self.hidden_size), **self.kwargs)
+
+    def reset_paramters(self):
+        bound = math.sqrt(1 / self.hidden_size)
+        init.uniform_(self.Wx, -bound, bound)
+        init.uniform_(self.Wh, -bound, bound)
+        if self.has_bias:
+            init.uniform_(self.bias, -bound, bound)
+
+    def __repr__(self) -> str:
+        return "{}({}, {}, bias={})".format(
+            self.__class__.__name__,
+            self.input_size,
+            self.hidden_size,
+            self.has_bias,
+        )
+
+    def move(self, device):
+        self.device = device
+        self.kwargs['device'] = self.device
+        self.Wx = self.Wx.to(self.device)
+        self.Wh = self.Wh.to(self.device)
+        if self.has_bias:
+            self.bias = self.bias.to(self.device)
 
 
 class LSTM(Module):
@@ -110,114 +349,290 @@ class LSTM(Module):
         self,
         input_size: int,
         hidden_size: int,
+        num_layers: int = 1,
+        bias: bool = True,
         batch_first: bool = False,
         bidirectional: bool = False,
         device=None,
         dtype=None,
     ) -> None:
         super().__init__()
-        kwargs = {"device": Device(device), "dtype": dtype}
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.has_bias = bias
         self.batch_first = batch_first
         self.bidirectional = bidirectional
-        scale = 1 / self.hidden_size**0.5
-        low_high = (-scale, scale)
+        self.kwargs = {"device": Device(device), "dtype": dtype}
 
-        self.Wx = Parameter(
-            tensor.uniform(*low_high, (input_size, hidden_size * 4), **kwargs))
-        self.Wh = Parameter(
-            tensor.uniform(*low_high, (hidden_size, hidden_size * 4),
-                           **kwargs))
-        self.bias = Parameter(
-            tensor.uniform(*low_high, hidden_size * 4, **kwargs))
-
+        assert num_layers > 0
+        size_list = [input_size] + [hidden_size] * (num_layers - 1)
+        self.LSTMCells: List[LSTMCell] = []
+        for i in range(num_layers):
+            cell = LSTMCell(
+                size_list[i],
+                hidden_size,
+                bias,
+                **self.kwargs,
+            )
+            setattr(self, 'lstm_{}'.format(i), cell)
+            self.LSTMCells.append(cell)
         if self.bidirectional:
-            self.Wx_reverse = Parameter(
-                tensor.uniform(*low_high, (input_size, hidden_size * 4),
-                               **kwargs))
-            self.Wh_reverse = Parameter(
-                tensor.uniform(*low_high, (hidden_size, hidden_size * 4),
-                               **kwargs))
-            self.bias_reverse = Parameter(
-                tensor.uniform(*low_high, hidden_size * 4, **kwargs))
-        self.kwargs = kwargs
+            self.rLSTMCells: List[LSTMCell] = []
+            for i in range(num_layers):
+                cell = LSTMCell(
+                    size_list[i],
+                    hidden_size,
+                    bias,
+                    **self.kwargs,
+                )
+                setattr(self, 'rlstm_{}'.format(i), cell)
+                self.rLSTMCells.append(cell)
 
-    def forward(self, x: tensor.Tensor, h=(None, None)) -> tensor.Tensor:
-        c = tensor.zeros(self.hidden_size, **self.kwargs)
-        c_reverse = tensor.zeros(self.hidden_size, **self.kwargs)
-
-        h, h_reverse = h
-        if h is None:
-            h = tensor.zeros(self.hidden_size, **self.kwargs)
-        if h_reverse is None:
-            h_reverse = tensor.zeros(self.hidden_size, **self.kwargs)
-
+    def forward(self, x, hx: Optional[Tuple] = None):
         if self.batch_first and x.ndim == 3:
             x = x.swapaxes(0, 1)
 
-        h_list = []
-
-        if self.bidirectional:
-            h_reverse_list = []
-            for id in range(x.shape[0]):
-                affine = x[id:id + 1] @ self.Wx + h @ self.Wh + self.bias
-                f_i_o, g = tensor.split(affine, [3 * self.hidden_size], axis=1)
-                sigma_fio, tanh_g = F.sigmoid(f_i_o), F.tanh(g)
-                f, i, o = tensor.split(sigma_fio, 3, axis=1)
-                c = tensor.mean(f * c + tanh_g * i, (0, 1))
-                h = o * F.tanh(c)
-                h_list.append(h)
-
-                affine = x[
-                    x.shape[0] - id - 1:x.shape[0] -
-                    id] @ self.Wx_reverse + h_reverse @ self.Wh_reverse + self.bias_reverse
-                f_i_o, g = tensor.split(affine, [3 * self.hidden_size], axis=1)
-                sigma_fio, tanh_g = F.sigmoid(f_i_o), F.tanh(g)
-                f, i, o = tensor.split(sigma_fio, 3, axis=1)
-                c = tensor.mean(f * c_reverse + tanh_g * i, (0, 1))
-                h_reverse = o * F.tanh(c_reverse)
-                h_reverse_list.append(h_reverse)
-
-                output = tensor.concatenate(
-                    [
-                        tensor.concatenate(h_list),
-                        tensor.concatenate(h_reverse_list)
-                    ],
-                    axis=-1,
-                )
+        if hx is None:
+            h = self.init_hidden(x)
+            c = self.init_hidden(x)
         else:
-            for id in range(x.shape[0]):
-                affine = x[id:id + 1] @ self.Wx + h @ self.Wh + self.bias
-                f_i_o, g = tensor.split(affine, [3 * self.hidden_size], axis=1)
-                sigma_fio, tanh_g = F.sigmoid(f_i_o), F.tanh(g)
-                f, i, o = tensor.split(sigma_fio, 3, axis=1)
-                c = tensor.mean(f * c + tanh_g * i, (0, 1))
-                h = o * F.tanh(c)
-                h_list.append(h)
+            d = 2 if self.bidirectional else 1
+            h, c = hx
+            assert (x.ndim == 2
+                    and h.shape == (d * self.num_layers, self.hidden_size)
+                    ) or (x.ndim == 3 and h.shape
+                          == (d * self.num_layers, x.shape[1],
+                              self.hidden_size)), "Wrong hidden state input!"
+            assert (x.ndim == 2
+                    and c.shape == (d * self.num_layers, self.hidden_size)
+                    ) or (x.ndim == 3 and c.shape
+                          == (d * self.num_layers, x.shape[1],
+                              self.hidden_size)), "Wrong cell state input!"
 
+        if self.num_layers == 1 and not self.bidirectional:
+            h_list, c_list = self.cell_forward(
+                self.LSTMCells[0],
+                x,
+                (h[0], c[0]),
+            )
             output = tensor.concatenate(h_list)
-
+            hn = h_list[-1]
+            cn = c_list[-1]
+        elif self.num_layers == 1 and self.bidirectional:
+            h_list, c_list = self.cell_forward(
+                self.LSTMCells[0],
+                x,
+                (h[0], c[0]),
+            )
+            hr_list, cr_list = self.cell_forward(
+                self.rLSTMCells[0],
+                x[::-1],
+                (h[1], c[1]),
+            )
+            output = tensor.concatenate(
+                [
+                    tensor.concatenate(h_list),
+                    tensor.concatenate(hr_list[::-1])
+                ],
+                axis=-1,
+            )
+            hn = tensor.concatenate([h_list[-1], hr_list[-1]])
+            cn = tensor.concatenate([c_list[-1], cr_list[-1]])
+        elif self.num_layers > 1 and not self.bidirectional:
+            hn_list, cn_list = [], []
+            for i in range(self.num_layers):
+                h_list, c_list = self.cell_forward(
+                    self.LSTMCells[i],
+                    x if i == 0 else tensor.concatenate(h_list),
+                    (h[i], c[i]),
+                )
+                hn_list.append(h_list[-1])
+                cn_list.append(c_list[-1])
+            output = tensor.concatenate(h_list)
+            hn = tensor.concatenate(hn_list)
+            cn = tensor.concatenate(cn_list)
+        else:
+            hn_list, hrn_list = [], []
+            cn_list, crn_list = [], []
+            for i in range(self.num_layers):
+                h_list, c_list = self.cell_forward(
+                    self.LSTMCells[i],
+                    x if i == 0 else tensor.concatenate(h_list),
+                    (h[i], c[i]),
+                )
+                hr_list, cr_list = self.cell_forward(
+                    self.rLSTMCells[i],
+                    x[::-1] if i == 0 else tensor.concatenate(hr_list),
+                    (h[i + self.num_layers], c[i + self.num_layers]),
+                )
+                hn_list.append(h_list[-1])
+                hrn_list.append(hr_list[-1])
+                cn_list.append(c_list[-1])
+                crn_list.append(cr_list[-1])
+            output = tensor.concatenate(
+                [
+                    tensor.concatenate(h_list),
+                    tensor.concatenate(hr_list[::-1])
+                ],
+                axis=-1,
+            )
+            hn = tensor.concatenate(hn_list + hrn_list)
+            cn = tensor.concatenate(cn_list + crn_list)
         if self.batch_first and x.ndim == 3:
             output = output.swapaxes(0, 1)
-        return output
+            hn = hn.swapaxes(0, 1)
+            cn = cn.swapaxes(0, 1)
+
+        return output, (hn, cn)
+
+    def reset_parameters(self):
+        for i in range(self.num_layers):
+            self.LSTMCells[i].reset_paramters()
+        if self.bidirectional:
+            for i in range(self.num_layers):
+                self.rLSTMCells[i].reset_paramters()
+
+    def init_hidden(self, x):
+        assert x.ndim in {2, 3}
+        d = 2 if self.bidirectional else 1
+        if x.ndim == 2:
+            return tensor.zeros(
+                (d * self.num_layers, self.hidden_size),
+                **self.kwargs,
+            )
+        else:
+            batch_size = x.shape[1]
+            return tensor.zeros(
+                (d * self.num_layers, batch_size, self.hidden_size),
+                **self.kwargs,
+            )
+
+    def cell_forward(self, cell: RNNCell, x, h: Tuple):
+        seq_len = x.shape[0]
+        h_list, c_list = [], []
+        for i in range(seq_len):
+            h = cell(x[i], h)  # Infact, `h` here is a tuple (h, c)
+            h_list.append(tensor.unsqueeze(h[0], axis=0))
+            c_list.append(tensor.unsqueeze(h[1], axis=0))
+        return h_list, c_list
 
     def __repr__(self) -> str:
-        return "{}(input_size={}, hidden_size={}, batch_first={}, bidirectional={})".format(
-            self.__class__.__name__, self.input_size, self.hidden_size,
-            self.batch_first, self.bidirectional)
+        return "{}({}, {}, num_layers={}, bias={}, batch_first={}, bidirectional={})".format(
+            self.__class__.__name__,
+            self.input_size,
+            self.hidden_size,
+            self.num_layers,
+            self.has_bias,
+            self.batch_first,
+            self.bidirectional,
+        )
+
+    def move(self, device):
+        for i in range(self.num_layers):
+            self.LSTMCells[i] = self.LSTMCells[i].move(device)
+        if self.bidirectional:
+            for i in range(self.num_layers):
+                self.rLSTMCells[i] = self.rLSTMCells[i].move(device)
+
+
+class GRUCell(Module):
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        bias: bool = True,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.kwargs = {"device": Device(device), "dtype": dtype}
+
+        self.Wx1 = Parameter(
+            tensor.empty(
+                (input_size, 2 * hidden_size),
+                **self.kwargs,
+            ))
+        self.Wh1 = Parameter(
+            tensor.empty(
+                (hidden_size, 2 * hidden_size),
+                **self.kwargs,
+            ))
+        self.Wx2 = Parameter(
+            tensor.empty(
+                (input_size, hidden_size),
+                **self.kwargs,
+            ))
+        self.Wh2 = Parameter(
+            tensor.empty(
+                (hidden_size, hidden_size),
+                **self.kwargs,
+            ))
+
+        if bias:
+            self.bias1 = Parameter(
+                tensor.empty(2 * self.hidden_size, **self.kwargs))
+            self.bias2 = Parameter(
+                tensor.empty(self.hidden_size, **self.kwargs))
+
+        self.has_bias = bias
+        self.reset_parameters()
+
+    def forward(self, x, h=None):
+        if h is None:
+            h = self.init_hidden(x)
+        else:
+            assert (x.ndim == 1 and h.shape == (self.hidden_size, )) or (
+                x.ndim == 2 and h.shape
+                == (x.shape[0], self.hidden_size)), "Wrong hidden state input!"
+
+        lin1 = x @ self.Wx1 + h @ self.Wh1
+        if self.has_bias:
+            lin1 = lin1 + self.bias1
+        z, r = tensor.split(F.sigmoid(lin1), 2, axis=1)
+        lin2 = x @ self.Wx2 + (r * h) @ self.Wh2
+        if self.has_bias:
+            lin2 = lin2 + self.bias2
+        return (1 - z) * h + z * F.tanh(lin2)
+
+    def reset_parameters(self):
+        bound = math.sqrt(1 / self.hidden_size)
+        init.uniform_(self.Wx1, -bound, bound)
+        init.uniform_(self.Wx2, -bound, bound)
+        init.uniform_(self.Wh1, -bound, bound)
+        init.uniform_(self.Wh2, -bound, bound)
+        if self.has_bias:
+            init.uniform_(self.bias1, -bound, bound)
+            init.uniform_(self.bias2, -bound, bound)
+
+    def init_hidden(self, x):
+        assert x.ndim in {1, 2}
+        if x.ndim == 1:
+            return tensor.zeros(self.hidden_size, **self.kwargs)
+        else:
+            batch_size = x.shape[0]
+            return tensor.zeros((batch_size, self.hidden_size), **self.kwargs)
+
+    def __repr__(self) -> str:
+        return "{}({}, {}, bias={})".format(
+            self.__class__.__name__,
+            self.input_size,
+            self.hidden_size,
+            self.has_bias,
+        )
 
     def move(self, device):
         self.device = device
         self.kwargs['device'] = self.device
-        self.Wx = self.Wx.to(self.device)
-        self.Wh = self.Wh.to(self.device)
-        self.bias = self.bias.to(self.device)
-
-        if self.bidirectional:
-            self.Wx_reverse = self.Wx_reverse.to(self.device)
-            self.Wh_reverse = self.Wh_reverse.to(self.device)
-            self.bias_reverse = self.bias_reverse.to(self.device)
+        self.Wx1 = self.Wx1.to(self.device)
+        self.Wx2 = self.Wx2.to(self.device)
+        self.Wh1 = self.Wh1.to(self.device)
+        self.Wh2 = self.Wh2.to(self.device)
+        if self.has_bias:
+            self.bias1 = self.bias1.to(self.device)
+            self.bias2 = self.bias2.to(self.device)
 
 
 class GRU(Module):
@@ -225,124 +640,156 @@ class GRU(Module):
         self,
         input_size: int,
         hidden_size: int,
+        num_layers: int = 1,
+        bias: bool = True,
         batch_first: bool = False,
         bidirectional: bool = False,
         device=None,
         dtype=None,
     ) -> None:
         super().__init__()
-        kwargs = {"device": Device(device), "dtype": dtype}
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.has_bias = bias
         self.batch_first = batch_first
         self.bidirectional = bidirectional
-        scale = 1 / self.hidden_size**0.5
-        low_high = (scale, -scale)
+        self.kwargs = {"device": Device(device), "dtype": dtype}
 
-        self.Wx = Parameter(
-            tensor.uniform(*low_high, (input_size, 3 * hidden_size), **kwargs))
-        self.Wh_zr = Parameter(
-            tensor.uniform(*low_high, (hidden_size, 2 * hidden_size),
-                           **kwargs))
-        self.bias_zr = Parameter(
-            tensor.uniform(*low_high, 2 * hidden_size, **kwargs))
-        self.Wh = Parameter(
-            tensor.uniform(*low_high, (hidden_size, hidden_size), **kwargs))
-        self.bias = Parameter(
-            tensor.uniform(*low_high, self.hidden_size, **kwargs))
-
+        assert num_layers > 0
+        size_list = [input_size] + [hidden_size] * (num_layers - 1)
+        self.GRUCells: List[GRUCell] = []
+        for i in range(num_layers):
+            cell = GRUCell(
+                size_list[i],
+                hidden_size,
+                bias,
+                **self.kwargs,
+            )
+            setattr(self, 'gru_{}'.format(i), cell)
+            self.GRUCells.append(cell)
         if self.bidirectional:
-            self.Wx_reverse = Parameter(
-                tensor.uniform(*low_high, (input_size, 3 * hidden_size),
-                               **kwargs))
-            self.Wh_zr_reverse = Parameter(
-                tensor.uniform(*low_high, (hidden_size, 2 * hidden_size),
-                               **kwargs))
-            self.bias_zr_reverse = Parameter(
-                tensor.uniform(*low_high, 2 * hidden_size, **kwargs))
-            self.Wh_reverse = Parameter(
-                tensor.uniform(*low_high, (hidden_size, hidden_size),
-                               **kwargs))
-            self.bias_reverse = Parameter(
-                tensor.uniform(*low_high, self.hidden_size, **kwargs))
+            self.rGRUCells: List[GRUCell] = []
+            for i in range(num_layers):
+                cell = GRUCell(
+                    size_list[i],
+                    hidden_size,
+                    bias,
+                    **self.kwargs,
+                )
+                setattr(self, 'rgru_{}'.format(i), cell)
+                self.rGRUCells.append(cell)
 
-        self.kwargs = kwargs
-
-    def forward(self, x: tensor.Tensor, h=(None, None)) -> tensor.Tensor:
-        h, h_reverse = h
-        if h is None:
-            h = tensor.zeros(self.hidden_size, **self.kwargs)
-        if h_reverse is None:
-            h_reverse = tensor.zeros(self.hidden_size, **self.kwargs)
-
+    def forward(self, x, h=None):
         if self.batch_first and x.ndim == 3:
-            # x.ndim的数据是(seq_len, input_size)不需要变换
             x = x.swapaxes(0, 1)
 
-        h_list = []
+        if h is None:
+            h = self.init_hidden(x)
+        else:
+            d = 2 if self.bidirectional else 1
+            assert (x.ndim == 2
+                    and h.shape == (d * self.num_layers, self.hidden_size)
+                    ) or (x.ndim == 3 and h.shape
+                          == (d * self.num_layers, x.shape[1],
+                              self.hidden_size)), "Wrong hidden state input!"
 
-        if self.bidirectional:
-            h_reverse_list = []
-            for i in range(x.shape[0]):
-                affine = x[i:i + 1] @ self.Wx
-                zr = F.sigmoid(affine[..., :2 * self.hidden_size] +
-                               h @ self.Wh_zr + self.bias_zr)
-                z, r = zr[..., :self.hidden_size], zr[..., self.hidden_size:]
-                h_tilde = F.tanh(affine[..., -self.hidden_size:] +
-                                 (r * h) @ self.Wh + self.bias)
-                h = (1 - z) * h + z * h_tilde
-                h_list.append(h)
+        if self.num_layers == 1 and not self.bidirectional:
+            h_list = self.cell_forward(self.GRUCells[0], x, h[0])
+            output = tensor.concatenate(h_list)
+            hn = h_list[-1]
 
-                affine = x[x.shape[0] - i - 1:x.shape[0] - i] @ self.Wx_reverse
-                zr = F.sigmoid(affine[..., :2 * self.hidden_size] +
-                               h @ self.Wh_zr_reverse + self.bias_zr_reverse)
-                z, r = zr[..., :self.hidden_size], zr[..., self.hidden_size:]
-                h_tilde = F.tanh(affine[..., -self.hidden_size:] +
-                                 (r * h) @ self.Wh_reverse + self.bias_reverse)
-                h_reverse = (1 - z) * h_reverse + z * h_tilde
-                h_reverse_list.append(h_reverse)
+        elif self.num_layers == 1 and self.bidirectional:
+            h_list = self.cell_forward(self.GRUCells[0], x, h[0])
+            hr_list = self.cell_forward(self.rGRUCells[0], x[::-1], h[1])
+            output = tensor.concatenate(
+                [
+                    tensor.concatenate(h_list),
+                    tensor.concatenate(hr_list[::-1])
+                ],
+                axis=-1,
+            )
+            hn = tensor.concatenate([h_list[-1], hr_list[-1]])
 
-                output = tensor.concatenate(
-                    [
-                        tensor.concatenate(h_list),
-                        tensor.concatenate(h_reverse_list)
-                    ],
-                    axis=-1,
+        elif self.num_layers > 1 and not self.bidirectional:
+            hn_list = []
+            for i in range(self.num_layers):
+                h_list = self.cell_forward(
+                    self.GRUCells[i],
+                    x if i == 0 else tensor.concatenate(h_list),
+                    h[i],
                 )
+                hn_list.append(h_list[-1])
+            output = tensor.concatenate(h_list)
+            hn = tensor.concatenate(hn_list)
 
         else:
-            for i in range(x.shape[0]):
-                affine = x[i:i + 1] @ self.Wx
-                zr = F.sigmoid(affine[..., :2 * self.hidden_size] +
-                               h @ self.Wh_zr + self.bias_zr)
-                z, r = zr[..., :self.hidden_size], zr[..., self.hidden_size:]
-                h_tilde = F.tanh(affine[..., -self.hidden_size:] +
-                                 (r * h) @ self.Wh + self.bias)
-                h = (1 - z) * h + z * h_tilde
-                h_list.append(h)
-            output = tensor.concatenate(h_list)
+            hn_list = []
+            hrn_list = []
+            for i in range(self.num_layers):
+                h_list = self.cell_forward(
+                    self.GRUCells[i],
+                    x if i == 0 else tensor.concatenate(h_list),
+                    h[i],
+                )
+                hr_list = self.cell_forward(
+                    self.rGRUCells[i],
+                    x[::-1] if i == 0 else tensor.concatenate(hr_list),
+                    h[i + self.num_layers],
+                )
+                hn_list.append(h_list[-1])
+                hrn_list.append(hr_list[-1])
+            output = tensor.concatenate(
+                [
+                    tensor.concatenate(h_list),
+                    tensor.concatenate(hr_list[::-1])
+                ],
+                axis=-1,
+            )
+            hn = tensor.concatenate(hn_list + hrn_list)
 
         if self.batch_first and x.ndim == 3:
             output = output.swapaxes(0, 1)
-        return output
+            hn = hn.swapaxes(0, 1)
+        return output, hn
+
+    def init_hidden(self, x):
+        assert x.ndim in {2, 3}
+        d = 2 if self.bidirectional else 1
+        if x.ndim == 2:
+            return tensor.zeros(
+                (d * self.num_layers, self.hidden_size),
+                **self.kwargs,
+            )
+        else:
+            batch_size = x.shape[1]
+            return tensor.zeros(
+                (d * self.num_layers, batch_size, self.hidden_size),
+                **self.kwargs,
+            )
+
+    def cell_forward(self, cell: GRUCell, x, h):
+        seq_len = x.shape[0]
+        h_list = []
+        for i in range(seq_len):
+            h = cell(x[i], h)
+            h_list.append(tensor.unsqueeze(h, axis=0))
+        return h_list
 
     def __repr__(self) -> str:
-        return "{}(input_size={}, hidden_size={}, batch_first={}, bidirectional={})".format(
-            self.__class__.__name__, self.input_size, self.hidden_size,
-            self.batch_first, self.bidirectional)
+        return "{}({}, {}, num_layers={}, bias={}, batch_first={}, bidirectional={})".format(
+            self.__class__.__name__,
+            self.input_size,
+            self.hidden_size,
+            self.num_layers,
+            self.has_bias,
+            self.batch_first,
+            self.bidirectional,
+        )
 
     def move(self, device):
-        self.device = device
-        self.kwargs['device'] = self.device
-        self.Wx = self.Wx.to(self.device)
-        self.Wh_zr = self.Wh_zr.to(self.device)
-        self.bias_zr = self.bias_zr.to(self.device)
-        self.Wh = self.Wh.to(self.device)
-        self.bias = self.bias.to(self.device)
-
+        for i in range(self.num_layers):
+            self.GRUCells[i] = self.GRUCells[i].move(device)
         if self.bidirectional:
-            self.Wx_reverse = self.Wx_reverse.to(self.device)
-            self.Wh_zr_reverse = self.Wh_zr_reverse.to(self.device)
-            self.bias_zr_reverse = self.bias_zr_reverse.to(self.device)
-            self.Wh_reverse = self.Wh_reverse.to(self.device)
-            self.bias_reverse = self.bias_reverse.to(self.device)
+            for i in range(self.num_layers):
+                self.rGRUCells[i] = self.rGRUCells[i].move(device)
