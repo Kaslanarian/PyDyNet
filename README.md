@@ -47,38 +47,9 @@ graph BT
    N --> GD(Optimizer:SGD, Adam, etc) ----> LS(lr_scheduler:StepLR, etc)--> Mission
 ```
 
-虚线表示用户可以通过`no_grad`来关闭自动微分功能。
+虚线表示用户可以通过`no_grad`来关闭自动微分功能。更全面的架构图（Thanks to [duma-repo](https://github.com/duma-repo)）：
 
-文件结构
-
-```bash
-pydynet
-├── __init__.py
-├── autograd.py       # 微分控制模块
-├── cuda.py           # cuda功能模块
-├── data.py           # 数据集模块
-├── nn                # 神经网络模块
-│   ├── __init__.py   
-│   ├── functional.py # 函数类
-│   ├── init.py       # 初始化模块
-│   ├── modules
-│   │   ├── __init__.py
-│   │   ├── activation.py # 激活函数
-│   │   ├── batchnorm.py  # BN
-│   │   ├── conv.py       # 卷积
-│   │   ├── dropout.py    # Dropout
-│   │   ├── linear.py     # 线性层
-│   │   ├── loss.py       # 损失函数类
-│   │   ├── module.py     # Module基类，包括Sequential
-│   │   ├── pool.py       # 池化
-│   │   └── rnn.py        # RNN
-│   └── parameter.py      # 参数化类
-├── optim
-│   ├── __init__.py
-│   ├── lr_scheduler.py   # 学习率衰减策略
-│   └── optimizer.py      # 优化器类
-└── tensor.py             # 张量类
-```
+![img](https://img-blog.csdnimg.cn/img_convert/064a400df02e5cecda83515ad872cf26.png)
 
 我们实现了：
 
