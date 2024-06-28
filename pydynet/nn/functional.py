@@ -19,7 +19,8 @@ def linear(x: tensor.Tensor, weight: tensor.Tensor, bias: tensor.Tensor):
 
 
 class sigmoid(tensor.UnaryOperator):
-    '''Sigmoid运算，我们前向传播避免了溢出问题'''
+    '''Sigmoid运算, 我们前向传播避免了溢出问题'''
+
     def forward(self, x: tensor.Tensor) -> np.ndarray:
         sigmoid = self.xp.zeros(x.shape)
         sigmoid[x.data > 0] = 1 / (1 + self.xp.exp(-x.data[x.data > 0]))
@@ -31,7 +32,8 @@ class sigmoid(tensor.UnaryOperator):
 
 
 class tanh(tensor.UnaryOperator):
-    '''Tanh运算，我们前向传播避免了溢出问题'''
+    '''Tanh运算, 我们前向传播避免了溢出问题'''
+
     def forward(self, x: tensor.Tensor) -> np.ndarray:
         tanh = self.xp.zeros(x.shape)
         tanh[x.data > 0] = 2 / (1 + self.xp.exp(-2 * x.data[x.data > 0])) - 1
@@ -65,6 +67,7 @@ def log_softmax(x: tensor.Tensor, axis=None, keepdims=False):
 
 
 class __im2col1d(tensor.UnaryOperator):
+
     def __init__(
         self,
         x: tensor.Tensor,
@@ -97,6 +100,7 @@ class __im2col1d(tensor.UnaryOperator):
 
 
 class __pad1d(tensor.UnaryOperator):
+
     def __init__(self, x: tensor.Tensor, pad_width=0) -> None:
         self.pad_width = pad_width
         super().__init__(x)
@@ -125,9 +129,9 @@ def conv1d(
     Parameters
     ----------
     x : Tensor
-        输入数据，形状为(N, in_channels, n_features);
+        输入数据, 形状为(N, in_channels, n_features);
     kernel : Tensor
-        卷积核，形状为(out_channels, in_channels, kernel_size);
+        卷积核, 形状为(out_channels, in_channels, kernel_size);
     padding : int, default=0
         对输入特征两边补0数量;
     stride : int, default=1
@@ -152,7 +156,7 @@ def max_pool1d(
     Parameters
     ----------
     x : Tensor
-        输入数据，形状为(N, in_channels, n_features);
+        输入数据, 形状为(N, in_channels, n_features);
     kernel_size : int
         池化核大小;
     stride : int
@@ -178,7 +182,7 @@ def avg_pool1d(
     Parameters
     ----------
     x : Tensor
-        输入数据，形状为(N, in_channels, n_features);
+        输入数据, 形状为(N, in_channels, n_features);
     kernel_size : int
         池化核大小;
     stride : int
@@ -192,6 +196,7 @@ def avg_pool1d(
 
 
 class __im2col2d(tensor.UnaryOperator):
+
     def __init__(
         self,
         x: tensor.Tensor,
@@ -231,6 +236,7 @@ class __im2col2d(tensor.UnaryOperator):
 
 
 class __pad2d(tensor.UnaryOperator):
+
     def __init__(self, x: tensor.Tensor, pad_width=0) -> None:
         self.pad_width = pad_width
         super().__init__(x)
@@ -254,14 +260,14 @@ def conv2d(x: tensor.Tensor,
            stride: int = 1):
     '''二维卷积函数
 
-    基于im2col实现的二维卷积. 为了实现上的方便，我们不考虑长宽不同的卷积核，步长和补零。
+    基于im2col实现的二维卷积. 为了实现上的方便, 我们不考虑长宽不同的卷积核, 步长和补零。
     
     Parameters
     ----------
     x : Tensor
-        输入数据，形状为(N, in_channels, n_height, n_width);
+        输入数据, 形状为(N, in_channels, n_height, n_width);
     kernel : Tensor
-        卷积核，形状为(out_channels, in_channels, kernel_height, kernel_width);
+        卷积核, 形状为(out_channels, in_channels, kernel_height, kernel_width);
     padding : int, default=0
         对输入图片周围补0数量;
     stride : int, default=1
@@ -281,12 +287,12 @@ def conv2d(x: tensor.Tensor,
 def max_pool2d(x: tensor.Tensor, kernel_size: int, stride: int, padding=0):
     '''二维卷积函数池化
 
-    基于im2col实现的二维卷积. 为了实现上的方便，我们不考虑长宽不同的kernel_size，步长和补零。
+    基于im2col实现的二维卷积. 为了实现上的方便, 我们不考虑长宽不同的kernel_size, 步长和补零。
     
     Parameters
     ----------
     x : Tensor
-        输入数据，形状为(N, in_channels, n_height, n_width);
+        输入数据, 形状为(N, in_channels, n_height, n_width);
     kernel_size : int
         池化核尺寸;
     stride : int, default=1
@@ -310,12 +316,12 @@ def max_pool2d(x: tensor.Tensor, kernel_size: int, stride: int, padding=0):
 def avg_pool2d(x: tensor.Tensor, kernel_size: int, stride: int, padding=0):
     '''二维平均池化
 
-    基于im2col实现的二维池化. 为了实现上的方便，我们不考虑长宽不同的kernel_size，步长和补零。
+    基于im2col实现的二维池化. 为了实现上的方便, 我们不考虑长宽不同的kernel_size, 步长和补零。
     
     Parameters
     ----------
     x : Tensor
-        输入数据，形状为(N, in_channels, n_height, n_width);
+        输入数据, 形状为(N, in_channels, n_height, n_width);
     kernel_size : int
         池化核尺寸;
     stride : int, default=1
@@ -344,7 +350,7 @@ def mse_loss(y_pred, y_true, reduction='mean'):
     elif reduction == 'sum':
         return tensor.sum(square_sum)
     else:
-        assert 0, "reduction must be mean or sum."
+        raise ValueError("reduction must be mean or sum.")
 
 
 def nll_loss(y_pred, y_true, reduction='mean'):
@@ -355,7 +361,7 @@ def nll_loss(y_pred, y_true, reduction='mean'):
     elif reduction == 'sum':
         return tensor.sum(nll)
     else:
-        assert 0, "reduction must be mean or sum."
+        raise ValueError("reduction must be mean or sum.")
 
 
 def cross_entropy_loss(y_pred, y_true, reduction='mean'):
@@ -363,10 +369,16 @@ def cross_entropy_loss(y_pred, y_true, reduction='mean'):
     update_y_pred = y_pred - y_pred.data.max()
     log_sum_exp = tensor.log(
         tensor.sum(tensor.exp(update_y_pred), 1, keepdims=True))
-    nll = (log_sum_exp - update_y_pred) * y_true
+
+    neg_log_sm = log_sum_exp - update_y_pred
+    if y_true.ndim == 1:
+        nll = neg_log_sm[range(len(neg_log_sm)), y_true]
+    else:
+        nll = neg_log_sm * y_true
+
     if reduction == 'mean':
         return tensor.mean(nll)
     elif reduction == 'sum':
         return tensor.sum(nll)
     else:
-        assert 0, "reduction must be mean or sum."
+        raise ValueError("reduction must be mean or sum.")

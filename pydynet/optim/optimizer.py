@@ -17,6 +17,7 @@ from ..tensor import Tensor
 
 class Optimizer:
     '''优化器基类'''
+
     def __init__(self, params: List[Tensor]) -> None:
         self.params: List[Tensor] = list(params)
 
@@ -45,6 +46,7 @@ class SGD(Optimizer):
     nesterov : bool, defallt=True.
         是否采用Nesterov加速.
     '''
+
     def __init__(
         self,
         params: List[Tensor],
@@ -84,6 +86,7 @@ class Adagrad(Optimizer):
     eps : float, default=1e-10
         epsilon.
     '''
+
     def __init__(
         self,
         params: List[Tensor],
@@ -118,6 +121,7 @@ class Adadelta(Optimizer):
     eps : float, default=1e-10
         epsilon.
     '''
+
     def __init__(
         self,
         params: List[Tensor],
@@ -143,6 +147,7 @@ class Adadelta(Optimizer):
 
 
 class Adam(Optimizer):
+
     def __init__(
         self,
         params: List[Tensor],

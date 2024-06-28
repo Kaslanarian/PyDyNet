@@ -2,13 +2,14 @@ from .module import Module
 from ..parameter import Parameter
 from .. import init
 from .. import functional as F
-from ... import tensor
+from ...special import empty
 from ...cuda import Device
 
 import math
 
 
 class Conv1d(Module):
+
     def __init__(
         self,
         in_channels: int,
@@ -28,10 +29,9 @@ class Conv1d(Module):
         self.padding = padding
         self.stride = stride
         self.weight = Parameter(
-            tensor.empty(
-                (self.out_channels, self.in_channels, self.kernel_size),
-                **kwargs))
-        self.bias = Parameter(tensor.empty(
+            empty((self.out_channels, self.in_channels, self.kernel_size),
+                  **kwargs))
+        self.bias = Parameter(empty(
             (1, self.out_channels, 1), **kwargs)) if bias else None
         self.reset_parameters()
 
@@ -60,13 +60,9 @@ class Conv1d(Module):
             self.bias is not None,
         )
 
-    def move(self, device):
-        self.device = device
-        self.weight = self.weight.to(self.device)
-        self.bias = self.bias.to(self.device)
-
 
 class Conv2d(Module):
+
     def __init__(
         self,
         in_channels: int,
@@ -86,11 +82,10 @@ class Conv2d(Module):
         self.padding = padding
         self.stride = stride
         self.weight = Parameter(
-            tensor.empty((self.out_channels, self.in_channels,
-                          self.kernel_size, self.kernel_size), **kwargs))
-        self.bias = Parameter(
-            tensor.empty(
-                (1, self.out_channels, 1, 1), **kwargs)) if bias else None
+            empty((self.out_channels, self.in_channels, self.kernel_size,
+                   self.kernel_size), **kwargs))
+        self.bias = Parameter(empty(
+            (1, self.out_channels, 1, 1), **kwargs)) if bias else None
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -117,8 +112,3 @@ class Conv2d(Module):
             self.stride,
             self.bias is not None,
         )
-
-    def move(self, device):
-        self.device = device
-        self.weight = self.weight.to(self.device)
-        self.bias = self.bias.to(self.device)

@@ -5,6 +5,7 @@ from ...tensor import Tensor
 
 class Sigmoid(Module):
     '''激活函数层 : Sigmoid'''
+
     def forward(self, x) -> Tensor:
         return F.sigmoid(x)
 
@@ -14,6 +15,7 @@ class Sigmoid(Module):
 
 class Tanh(Module):
     '''激活函数层 : Tanh'''
+
     def forward(self, x) -> Tensor:
         return F.tanh(x)
 
@@ -23,6 +25,7 @@ class Tanh(Module):
 
 class ReLU(Module):
     '''激活函数层 : ReLU'''
+
     def forward(self, x) -> Tensor:
         return F.relu(x)
 
@@ -39,7 +42,8 @@ class LeakyReLU(Module):
     alpha : float
         负输入对应的斜率.
     '''
-    def __init__(self, alpha: float) -> None:
+
+    def __init__(self, alpha: float = 0.1) -> None:
         super().__init__()
         self.alpha = float(alpha)
 
@@ -59,6 +63,7 @@ class Softmax(Module):
     axis : Optional[Tuple[int]], default=None
         沿着axis计算softmax.
     '''
+
     def __init__(self, axis=None) -> None:
         super().__init__()
         self.axis = axis

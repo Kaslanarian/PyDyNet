@@ -2,6 +2,7 @@ from .module import Module
 from .. import init
 from .. import functional as F
 from ..parameter import Parameter
+from ...special import empty, zeros
 from ... import tensor
 from ...cuda import Device
 
@@ -10,6 +11,7 @@ import math
 
 
 class RNNCell(Module):
+
     def __init__(
         self,
         input_size: int,
@@ -26,19 +28,10 @@ class RNNCell(Module):
         self.nonlinearity = nonlinearity
         self.fn = {'tanh': F.tanh, 'relu': F.relu}[nonlinearity]
 
-        self.Wx = Parameter(
-            tensor.empty(
-                (input_size, hidden_size),
-                **self.kwargs,
-            ))
-        self.Wh = Parameter(
-            tensor.empty(
-                (hidden_size, hidden_size),
-                **self.kwargs,
-            ))
+        self.Wx = Parameter(empty((input_size, hidden_size), **self.kwargs))
+        self.Wh = Parameter(empty((hidden_size, hidden_size), **self.kwargs))
         if bias:
-            self.bias = Parameter(tensor.empty(self.hidden_size,
-                                               **self.kwargs))
+            self.bias = Parameter(empty(self.hidden_size, **self.kwargs))
         self.has_bias = bias
         self.reset_paramters()
 
@@ -65,10 +58,10 @@ class RNNCell(Module):
     def init_hidden(self, x):
         assert x.ndim in {1, 2}
         if x.ndim == 1:
-            return tensor.zeros(self.hidden_size, **self.kwargs)
+            return zeros(self.hidden_size, **self.kwargs)
         else:
             batch_size = x.shape[0]
-            return tensor.zeros((batch_size, self.hidden_size), **self.kwargs)
+            return zeros((batch_size, self.hidden_size), **self.kwargs)
 
     def __repr__(self) -> str:
         return "{}({}, {}, bias={}, nonlinearity={})".format(
@@ -80,15 +73,12 @@ class RNNCell(Module):
         )
 
     def move(self, device):
-        self.device = device
-        self.kwargs['device'] = self.device
-        self.Wx = self.Wx.to(self.device)
-        self.Wh = self.Wh.to(self.device)
-        if self.has_bias:
-            self.bias = self.bias.to(self.device)
+        self.kwargs['device'] = device
+        return super().move(device)
 
 
 class RNN(Module):
+
     def __init__(
         self,
         input_size: int,
@@ -221,13 +211,13 @@ class RNN(Module):
         assert x.ndim in {2, 3}
         d = 2 if self.bidirectional else 1
         if x.ndim == 2:
-            return tensor.zeros(
+            return zeros(
                 (d * self.num_layers, self.hidden_size),
                 **self.kwargs,
             )
         else:
             batch_size = x.shape[1]
-            return tensor.zeros(
+            return zeros(
                 (d * self.num_layers, batch_size, self.hidden_size),
                 **self.kwargs,
             )
@@ -253,14 +243,12 @@ class RNN(Module):
         )
 
     def move(self, device):
-        for i in range(self.num_layers):
-            self.RNNCells[i] = self.RNNCells[i].move(device)
-        if self.bidirectional:
-            for i in range(self.num_layers):
-                self.rRNNCells[i] = self.rRNNCells[i].move(device)
+        self.kwargs['device'] = device
+        return super().move(device)
 
 
 class LSTMCell(Module):
+
     def __init__(
         self,
         input_size: int,
@@ -274,19 +262,12 @@ class LSTMCell(Module):
         self.hidden_size = hidden_size
         self.kwargs = {"device": Device(device), "dtype": dtype}
 
-        self.Wx = Parameter(
-            tensor.empty(
-                (input_size, 4 * hidden_size),
-                **self.kwargs,
-            ))
+        self.Wx = Parameter(empty((input_size, 4 * hidden_size),
+                                  **self.kwargs))
         self.Wh = Parameter(
-            tensor.empty(
-                (hidden_size, 4 * hidden_size),
-                **self.kwargs,
-            ))
+            empty((hidden_size, 4 * hidden_size), **self.kwargs))
         if bias:
-            self.bias = Parameter(
-                tensor.empty(4 * self.hidden_size, **self.kwargs))
+            self.bias = Parameter(empty(4 * self.hidden_size, **self.kwargs))
         self.has_bias = bias
         self.reset_paramters()
 
@@ -315,10 +296,10 @@ class LSTMCell(Module):
     def init_hidden(self, x):
         assert x.ndim in {1, 2}
         if x.ndim == 1:
-            return tensor.zeros(self.hidden_size, **self.kwargs)
+            return zeros(self.hidden_size, **self.kwargs)
         else:
             batch_size = x.shape[0]
-            return tensor.zeros((batch_size, self.hidden_size), **self.kwargs)
+            return zeros((batch_size, self.hidden_size), **self.kwargs)
 
     def reset_paramters(self):
         bound = math.sqrt(1 / self.hidden_size)
@@ -336,15 +317,12 @@ class LSTMCell(Module):
         )
 
     def move(self, device):
-        self.device = device
-        self.kwargs['device'] = self.device
-        self.Wx = self.Wx.to(self.device)
-        self.Wh = self.Wh.to(self.device)
-        if self.has_bias:
-            self.bias = self.bias.to(self.device)
+        self.kwargs['device'] = device
+        return super().move(device)
 
 
 class LSTM(Module):
+
     def __init__(
         self,
         input_size: int,
@@ -497,13 +475,13 @@ class LSTM(Module):
         assert x.ndim in {2, 3}
         d = 2 if self.bidirectional else 1
         if x.ndim == 2:
-            return tensor.zeros(
+            return zeros(
                 (d * self.num_layers, self.hidden_size),
                 **self.kwargs,
             )
         else:
             batch_size = x.shape[1]
-            return tensor.zeros(
+            return zeros(
                 (d * self.num_layers, batch_size, self.hidden_size),
                 **self.kwargs,
             )
@@ -529,14 +507,12 @@ class LSTM(Module):
         )
 
     def move(self, device):
-        for i in range(self.num_layers):
-            self.LSTMCells[i] = self.LSTMCells[i].move(device)
-        if self.bidirectional:
-            for i in range(self.num_layers):
-                self.rLSTMCells[i] = self.rLSTMCells[i].move(device)
+        self.kwargs['device'] = device
+        return super().move(device)
 
 
 class GRUCell(Module):
+
     def __init__(
         self,
         input_size: int,
@@ -551,31 +527,15 @@ class GRUCell(Module):
         self.kwargs = {"device": Device(device), "dtype": dtype}
 
         self.Wx1 = Parameter(
-            tensor.empty(
-                (input_size, 2 * hidden_size),
-                **self.kwargs,
-            ))
+            empty((input_size, 2 * hidden_size), **self.kwargs))
         self.Wh1 = Parameter(
-            tensor.empty(
-                (hidden_size, 2 * hidden_size),
-                **self.kwargs,
-            ))
-        self.Wx2 = Parameter(
-            tensor.empty(
-                (input_size, hidden_size),
-                **self.kwargs,
-            ))
-        self.Wh2 = Parameter(
-            tensor.empty(
-                (hidden_size, hidden_size),
-                **self.kwargs,
-            ))
+            empty((hidden_size, 2 * hidden_size), **self.kwargs))
+        self.Wx2 = Parameter(empty((input_size, hidden_size), **self.kwargs))
+        self.Wh2 = Parameter(empty((hidden_size, hidden_size), **self.kwargs))
 
         if bias:
-            self.bias1 = Parameter(
-                tensor.empty(2 * self.hidden_size, **self.kwargs))
-            self.bias2 = Parameter(
-                tensor.empty(self.hidden_size, **self.kwargs))
+            self.bias1 = Parameter(empty(2 * self.hidden_size, **self.kwargs))
+            self.bias2 = Parameter(empty(self.hidden_size, **self.kwargs))
 
         self.has_bias = bias
         self.reset_parameters()
@@ -610,10 +570,10 @@ class GRUCell(Module):
     def init_hidden(self, x):
         assert x.ndim in {1, 2}
         if x.ndim == 1:
-            return tensor.zeros(self.hidden_size, **self.kwargs)
+            return zeros(self.hidden_size, **self.kwargs)
         else:
             batch_size = x.shape[0]
-            return tensor.zeros((batch_size, self.hidden_size), **self.kwargs)
+            return zeros((batch_size, self.hidden_size), **self.kwargs)
 
     def __repr__(self) -> str:
         return "{}({}, {}, bias={})".format(
@@ -624,18 +584,12 @@ class GRUCell(Module):
         )
 
     def move(self, device):
-        self.device = device
-        self.kwargs['device'] = self.device
-        self.Wx1 = self.Wx1.to(self.device)
-        self.Wx2 = self.Wx2.to(self.device)
-        self.Wh1 = self.Wh1.to(self.device)
-        self.Wh2 = self.Wh2.to(self.device)
-        if self.has_bias:
-            self.bias1 = self.bias1.to(self.device)
-            self.bias2 = self.bias2.to(self.device)
+        self.kwargs['device'] = device
+        return super().move(device)
 
 
 class GRU(Module):
+
     def __init__(
         self,
         input_size: int,
@@ -757,14 +711,13 @@ class GRU(Module):
         assert x.ndim in {2, 3}
         d = 2 if self.bidirectional else 1
         if x.ndim == 2:
-            return tensor.zeros(
+            return zeros(
                 (d * self.num_layers, self.hidden_size),
                 **self.kwargs,
             )
         else:
-            batch_size = x.shape[1]
-            return tensor.zeros(
-                (d * self.num_layers, batch_size, self.hidden_size),
+            return zeros(
+                (d * self.num_layers, x.shape[1], self.hidden_size),
                 **self.kwargs,
             )
 
@@ -788,8 +741,5 @@ class GRU(Module):
         )
 
     def move(self, device):
-        for i in range(self.num_layers):
-            self.GRUCells[i] = self.GRUCells[i].move(device)
-        if self.bidirectional:
-            for i in range(self.num_layers):
-                self.rGRUCells[i] = self.rGRUCells[i].move(device)
+        self.kwargs['device'] = device
+        return super().move(device)

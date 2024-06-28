@@ -30,6 +30,7 @@ def set_device(device: int) -> None:
 
 
 class Device:
+
     def __init__(self, device: Any = None) -> None:
         if isinstance(device, str):
             if device == "cpu":
@@ -62,7 +63,8 @@ class Device:
             return "Device(type='cuda', index={})".format(self.device_id)
 
     def __eq__(self, device: Any) -> bool:
-        assert isinstance(device, Device)
+        if not isinstance(device, Device):
+            device = Device(device)
         if self.device == "cpu":
             return device.device == "cpu"
         else:

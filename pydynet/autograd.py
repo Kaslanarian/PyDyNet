@@ -13,6 +13,7 @@ def set_grad_enabled(mode: bool):
 
 
 class no_grad:
+
     def __enter__(self) -> None:
         self.prev = is_grad_enable()
         set_grad_enabled(False)
@@ -21,6 +22,7 @@ class no_grad:
         set_grad_enabled(self.prev)
 
     def __call__(self, func):
+
         @functools.wraps(func)
         def decorate_context(*args, **kwargs):
             with __class__():
@@ -30,6 +32,7 @@ class no_grad:
 
 
 class enable_grad:
+
     def __enter__(self) -> None:
         self.prev = is_grad_enable()
         set_grad_enabled(True)
@@ -38,6 +41,7 @@ class enable_grad:
         set_grad_enabled(self.prev)
 
     def __call__(self, func):
+
         @functools.wraps(func)
         def decorate_context(*args, **kwargs):
             with __class__():

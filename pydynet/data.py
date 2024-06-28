@@ -2,6 +2,7 @@ from numpy.random import permutation
 
 
 class Dataset:
+
     def __init__(self) -> None:
         pass
 
@@ -13,6 +14,7 @@ class Dataset:
 
 
 class Sampler:
+
     def __init__(self, dataset: Dataset) -> None:
         pass
 
@@ -21,6 +23,7 @@ class Sampler:
 
 
 class SequentialSampler(Sampler):
+
     def __init__(self, dataset: Dataset) -> None:
         self.dataset = dataset
 
@@ -32,6 +35,7 @@ class SequentialSampler(Sampler):
 
 
 class RandomSampler(Sampler):
+
     def __init__(self, dataset: Dataset) -> None:
         self.dataset = dataset
 
@@ -43,6 +47,7 @@ class RandomSampler(Sampler):
 
 
 class BatchSampler(Sampler):
+
     def __init__(self, sampler: Sampler, batch_size: int,
                  drop_last: bool) -> None:
         self.sampler = sampler
@@ -66,6 +71,7 @@ class BatchSampler(Sampler):
 
 
 class _DataLoaderIter:
+
     def __init__(self, loader) -> None:
         self.loader = loader
         self.sample_iter = iter(self.loader.batch_sampler)
@@ -76,6 +82,7 @@ class _DataLoaderIter:
 
 
 class DataLoader:
+
     def __init__(self,
                  dataset: Dataset,
                  batch_size: int = 1,
@@ -100,7 +107,9 @@ class DataLoader:
 
 
 def data_loader(X, y, batch_size: int, shuffle: bool = False) -> list:
+
     class TrainSet(Dataset):
+
         def __init__(self, X, y) -> None:
             self.data = X
             self.target = y

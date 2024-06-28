@@ -25,7 +25,7 @@
 - 8.18: ver 0.0.8 加入学习率调整策略，实现了训练过程中自动调节学习率；
 - 10.21: ver 0.0.9 加入tensor的split方法，基于此改进了RNN；
 - 10.23: ver 0.0.10 重写RNN, LSTM和GRU，支持多层双向；
-- ...
+- **2024.6.28**: ver 0.1.0 修正了Cuda训练的问题, 加入多个可复现测试: (MLP, LeNet, BN & Dropout, RNN).
 
 </p>
 </details>
@@ -47,11 +47,7 @@ graph BT
    N --> GD(Optimizer:SGD, Adam, etc) ----> LS(lr_scheduler:StepLR, etc)--> Mission
 ```
 
-虚线表示用户可以通过`no_grad`来关闭自动微分功能。更全面的架构图（Thanks to [duma-repo](https://github.com/duma-repo)）：
-
-![img](https://img-blog.csdnimg.cn/img_convert/064a400df02e5cecda83515ad872cf26.png)
-
-我们实现了：
+虚线表示用户可以通过`no_grad`来关闭自动微分功能. 我们实现了：
 
 1. 将NumPy数组包装成具有梯度等信息的张量(Tensor):
    <details><summary>Example</summary>
@@ -73,9 +69,8 @@ graph BT
 
    ```python
    import pydynet as pdn
-   from pydynet import Tensor
 
-   x = Tensor([1, 2, 3])
+   x = pdn.Tensor([1, 2, 3])
    y = pdn.exp(x) + x
    z = pdn.sum(x)
    print(z.data) # 36.192...
@@ -222,84 +217,50 @@ cd PyDyNet
 python setup.py install
 ```
 
-安装成功后就可以运行下面的例子
-
 ## Example
 
-[tests](./tests)中是一些例子。
+[tests](./tests)中是一些例子。运行`python tests/XXX.py`即可:
 
 ### AutoDiff
 
-[autodiff.py](tests/autodiff.py)利用自动微分，对一个凸函数进行梯度下降：
+[autodiff1d.py](tests/autodiff1d.py)利用自动微分，对一个一维凸函数进行梯度下降：
 
-![ad](src/autodiff.png)
+<img src="src/ad1d.png" alt="ad1" style="zoom:67%;" />
 
-### DNN
+以及一个多元凸函数的例子: [autodiff2d.py](tests/autodiff2d.py)
 
-[DNN.py](tests/DNN.py)使用全连接网络对`sklearn`提供的数字数据集进行分类，训练参数
+<img src="src/ad2d.png" alt="ad2" style="zoom:67%;" />
 
-- 网络结构：Linear(64->64) + Sigmoid + Linear(64->10)；
-- 损失函数：Cross Entropy Loss；
-- 优化器：Adam(lr=0.01)；
-- 训练轮次：50；
-- 批大小(Batch size)：32.
 
-训练损失，训练准确率和测试准确率：
+### MLP & LeNet
 
-<img src="src/DNN.png" alt="dnn" style="zoom:67%;" />
+[mlp_cnn.py](tests/mlp_cnn.py)使用全连接网络(三层+残差)和LeNet对MNIST进行分类. 训练准确率和测试准确率：
 
-### CNN
+<img src="src/mlp_cnn.png" alt="dnn" style="zoom:67%;" />
 
-[CNN.py](tests/CNN.py)使用三种网络对`fetch_olivetti_faces`人脸(64×64)数据集进行分类并进行性能对比：
+### Dropout & BN
 
-1. Linear + Sigmoid + Linear;
-2. Conv1d + MaxPool1d + Linear + ReLU + Linear;
-3. Conv2d + MaxPool2d + Linear + ReLU + Linear.
+[mlp_dropout_bn.py](tests/mlp_dropout_bn.py)使用三种网络对`fetch_olivetti_faces`人脸(64×64)数据集进行分类并进行性能对比：
 
-其余参数相同：
-
-- 损失函数：Cross Entropy Loss；
-- 优化器：Adam(lr=0.01)；
-- 训练轮次：50；
-- 批大小(Batch size)：32.
+1. 三层MLP;
+2. 三层MLP + Dropout;
+3. 三层MLP + BatchNormalization.
 
 学习效果对比：
 
-<img src="src/CNN.png" alt="cnn" style="zoom:67%;" />
+<img src="src/dropout_BN.png" alt="cnn" style="zoom:67%;" />
 
-## Droput & BN
+### RNN
 
-[dropout_BN.py](tests/dropout_BN.py)使用三种网络对`fetch_olivetti_faces`人脸(64×64)数据集进行分类并进行性能对比：
+[rnn_sin.py](tests/rnn_sin.py)中是一个用RNN从$x=\sin(z)$学习$y=\cos(2z)$例子. 最后的训练结果:
 
-1. Linear + Sigmoid + Linear;
-2. Linear + Dropout(0.05) + Sigmoid + Linear;
-3. Linear + BN + Sigmoid + Linear.
-
-其余参数相同：
-
-- 损失函数：Cross Entropy Loss；
-- 优化器：Adam(lr=0.01)；
-- 训练轮次：50；
-- 批大小(Batch size)：32.
-
-学习效果对比：
-
-<img src="src/dropout_BN.png" alt="BN" style="zoom:67%;" />
-
-## RNN
-
-[RNN.py](tests/RNN.py)中是一个用双向单层GRU对`sklearn`的数字图片数据集进行分类：
-
-<img src="src/RNN.png" alt="RNN" style="zoom:67%;" />
+<img src="src/rnn.png" alt="RNN" style="zoom:67%;" />
 
 ## cuda相关
 
-[cuDNN.py](tests/cuDNN.py), [cuCNN.py](tests/cuCNN.py), [cuDropoutBN.py](tests/cuDropoutBN.py), [cuRNN.py](tests/cuRNN.py)分别是上面四种网络的cuda版本，并对网络进行了相应的修改，主要是介绍如何使用PyDyNet的显卡功能，且已经在无显卡和有显卡的环境下都通过了测试。
+在训练batch size为128, 测试batch size为512情况下，两种模型的训练速度比较:
 
-|  Net  |         Dataset          |        Parameters        |   CPU time   |   GPU time   |
-| :---: | :----------------------: | :----------------------: | :----------: | :----------: |
-|  FC   |     Digits (1970×64)     | batch_size=128, epoch=50 | 30.8s±392ms  | 22.4s±298ms  |
-| CNN1d | OlivettiFaces (400×4096) | batch_size=64, epoch=50  | 8.76s±68.7ms | 4.49s±16.3ms |
-| CNN2d | OlivettiFaces (400×4096) | batch_size=64, epoch=50  | 14.1s±285ms  |  4.54s±49ms  |
-
-事实上，对于越庞大的网络（更宽，更深，卷积），GPU加速效果更好。
+|     Net     | CPU time (s) per Epoch | GPU time (s) per Epoch |
+| :---------: | :--------------------: | :--------------------: |
+| ResidualMLP |      20.256±0.138      |       2.903±.018       |
+|    LeNet    |     239.664±2.108      |      10.148±0.026      |

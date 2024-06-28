@@ -3,6 +3,7 @@ from .. import functional as F
 
 
 class MaxPool1d(Module):
+
     def __init__(self, kernel_size: int, stride: int, padding: int) -> None:
         super().__init__()
         self.kernel_size = kernel_size
@@ -22,6 +23,7 @@ class MaxPool1d(Module):
 
 
 class AvgPool1d(Module):
+
     def __init__(self, kernel_size: int, stride: int, padding: int) -> None:
         super().__init__()
         self.kernel_size = kernel_size
@@ -41,6 +43,7 @@ class AvgPool1d(Module):
 
 
 class MaxPool2d(Module):
+
     def __init__(self, kernel_size: int, stride: int, padding: int) -> None:
         super().__init__()
         self.kernel_size = kernel_size
@@ -60,6 +63,7 @@ class MaxPool2d(Module):
 
 
 class AvgPool2d(Module):
+
     def __init__(self, kernel_size: int, stride: int, padding: int) -> None:
         super().__init__()
         self.kernel_size = kernel_size

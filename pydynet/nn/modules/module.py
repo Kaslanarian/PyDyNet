@@ -8,6 +8,7 @@ from ...cuda import Device, current_device
 
 
 class Module:
+
     def __init__(self) -> None:
         self._train = True
         self.device = Device("cpu")
@@ -59,18 +60,17 @@ class Module:
 
     def to(self, device):
         device = Device(device)
-        if self.device == device:
-            return self
-        else:
-            module = deepcopy(self)
-            module.move(device)
-            return module
+        if self.device != device:
+            self.move(device)
+        return self
 
     def move(self, device):
-        device = Device(device)
+        self.device = device
         for module in self.__dict__.values():
             if isinstance(module, Module):
                 module.move(device)
+            if isinstance(module, Parameter):
+                module.to(device)
 
     def cuda(self):
         device = current_device()
@@ -81,6 +81,7 @@ class Module:
 
 
 class Sequential(Module):
+
     def __init__(self, *args) -> None:
         super().__init__()
         self.module_list = []
@@ -100,3 +101,26 @@ class Sequential(Module):
 
     def __len__(self):
         return len(self.module_list)
+
+
+class ModuleList(Module):
+
+    def __init__(self, module_list: list) -> None:
+        super().__init__()
+        self.module_list = module_list
+
+        for idx, module in enumerate(module_list):
+            self.__setattr__(str(idx), module)
+
+    def __getitem__(self, index):
+        return self.module_list[index]
+
+    def __len__(self):
+        return len(self.module_list)
+
+    def append(self, module):
+        self.module_list.append(module)
+        self.__setattr__(str(len(self.module_list) - 1), module)
+
+    def index(self, module):
+        return self.module_list.index(module)

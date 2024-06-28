@@ -1,15 +1,15 @@
-from ctypes import Union
 from .module import Module
 from ..parameter import Parameter
-from .. import init
-from .. import functional as F
-from ...tensor import Tensor, empty
+from .. import init, functional as F
+from ...tensor import Tensor
+from ...special import empty
 from ...cuda import Device
 
 import math
 
 
 class Linear(Module):
+
     def __init__(
         self,
         in_features: int,
@@ -41,8 +41,3 @@ class Linear(Module):
     def __repr__(self) -> str:
         return "Linear(in_features={}, out_features={}, bias={})".format(
             self.in_features, self.out_features, self.bias is not None)
-
-    def move(self, device):
-        self.device = device
-        self.weight = self.weight.to(self.device)
-        self.bias = self.bias.to(self.device)
