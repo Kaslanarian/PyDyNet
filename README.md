@@ -254,7 +254,7 @@ python setup.py install
 
 [rnn_sin.py](tests/rnn_sin.py)中是一个用RNN从$x=\sin(z)$学习$y=\cos(2z)$例子. 最后的训练结果:
 
-<img src="src/rnn.png" alt="RNN" style="zoom:67%;" />
+<img src="src/RNN.png" alt="RNN" style="zoom:67%;" />
 
 ## cuda相关
 
