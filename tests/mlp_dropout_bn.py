@@ -1,5 +1,10 @@
 import numpy as np
-import cupy as cp
+
+try:
+    import cupy as cp
+    cp.random.seed(42)
+except:
+    print("Cupy is not installed!")
 import matplotlib.pyplot as plt
 from sklearn.datasets import fetch_olivetti_faces
 from sklearn.preprocessing import MinMaxScaler
@@ -22,7 +27,6 @@ except:
     pass
 
 np.random.seed(42)
-cp.random.seed(42)
 
 data_X, data_y = fetch_olivetti_faces(return_X_y=True)
 print(data_X.shape)

@@ -5,11 +5,12 @@ sys.path.append('../pydynet')
 import pydynet as pdn
 from pydynet.tensor import Tensor
 import pydynet.nn as nn
-from pydynet.optim import Adam, SGD
+from pydynet.optim import Adam
 
 import numpy as np
 try:
     import cupy as cp
+    cp.random.seed(42)
 except:
     print("Cupy is not installed!")
 
@@ -23,7 +24,6 @@ except:
     pass
 
 np.random.seed(42)
-cp.random.seed(42)
 
 device = 'cuda' if pdn.cuda.is_available() else 'cpu'
 

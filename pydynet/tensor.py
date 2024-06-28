@@ -34,7 +34,7 @@ def backward_subroutine(last, node):
             axis = (-i for i in range(1, dim2 + 1) if last.shape[-i] == 1)
             add_grad = node.xp.sum(add_grad, axis=tuple(axis), keepdims=True)
             if dim1 != dim2:  # dim1 >= dim2 for sure
-                add_grad = add_grad.sum(*range(dim1 - dim2))
+                add_grad = add_grad.sum(range(dim1 - dim2))
         last.grad += add_grad
     return last
 
@@ -698,14 +698,14 @@ class matmul(BinaryOperator):
             grad = self.xp.expand_dims(grad, -1)
 
         if node is self.last[0]:
-            grad1 = grad @ (self.xp.atleast_2d(self.last[1].data)
-                            if self.expand_b else self.last[1].data.T)
+            grad1 = grad @ (self.xp.atleast_2d(self.last[1].data) if self.
+                            expand_b else self.last[1].data.swapaxes(-1, -2))
             if self.expand_a:
                 grad1 = grad1[0]
             return grad1
         else:
-            grad2 = (self.xp.atleast_2d(self.last[0].data)
-                     if self.expand_a else self.last[0].data).T @ grad
+            grad2 = (self.xp.atleast_2d(self.last[0].data) if self.expand_a
+                     else self.last[0].data).swapaxes(-1, -2) @ grad
             if self.expand_b:
                 grad2 = grad2[..., 0]
             return grad2

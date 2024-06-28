@@ -18,6 +18,19 @@ def linear(x: tensor.Tensor, weight: tensor.Tensor, bias: tensor.Tensor):
     return affine
 
 
+def embedding(x: tensor.Tensor, weight: tensor.Tensor, padding_idx: int):
+    query = weight[x]
+    if padding_idx is not None:
+        with tensor.no_grad():
+            mask = tensor.Tensor(
+                weight.xp.expand_dims(x.data != padding_idx, -1),
+                dtype=float,
+                device=weight.device,
+            )
+        query = query * mask
+    return query
+
+
 class sigmoid(tensor.UnaryOperator):
     '''Sigmoid运算, 我们前向传播避免了溢出问题'''
 
@@ -52,11 +65,11 @@ def leaky_relu(x: tensor.Tensor, alpha: float):
     return tensor.maximum(x, alpha * x)
 
 
-def softmax(x: tensor.Tensor, axis=None, keepdims=False):
+def softmax(x: tensor.Tensor, axis=None):
     '''Softmax函数'''
     x_sub_max = x - x.data.max()
     exp_ = tensor.exp(x_sub_max)
-    return exp_ / tensor.sum(exp_, axis=axis, keepdims=keepdims)
+    return exp_ / tensor.sum(exp_, axis=axis, keepdims=True)
 
 
 def log_softmax(x: tensor.Tensor, axis=None, keepdims=False):

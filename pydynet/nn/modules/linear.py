@@ -4,6 +4,7 @@ from .. import init, functional as F
 from ...tensor import Tensor
 from ...special import empty
 from ...cuda import Device
+from ...autograd import no_grad
 
 import math
 
@@ -41,3 +42,36 @@ class Linear(Module):
     def __repr__(self) -> str:
         return "Linear(in_features={}, out_features={}, bias={})".format(
             self.in_features, self.out_features, self.bias is not None)
+
+
+class Embedding(Module):
+
+    def __init__(
+        self,
+        num_embeddings: int,
+        embedding_dim: int,
+        padding_idx=None,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__()
+        self.num_embedding = num_embeddings
+        self.embedding_dim = embedding_dim
+        self.padding_idx = padding_idx
+
+        kwargs = {"device": Device(device), "dtype": dtype}
+        self.weight = Parameter(
+            empty((self.num_embedding, self.embedding_dim), **kwargs))
+
+    def forward(self, x: Tensor):
+        return F.embedding(x, self.weight, self.padding_idx)
+
+    def reset_parameters(self) -> None:
+        init.normal_(self.weight)
+        self._fill_padding_idx_with_zero()
+
+    def _fill_padding_idx_with_zero(self) -> None:
+        if self.padding_idx is not None:
+            with no_grad():
+                self.weight[self.padding_idx].data = self.weight.xp.zeros(
+                    self.weight[self.padding_idx].data.shape)

@@ -1,4 +1,4 @@
-# PyDyNet：Neuron Network(DNN, CNN, RNN, etc) implementation using Numpy based on Autodiff
+# PyDyNet：Neuron Network (MLP, CNN, RNN, Transformer, ...) implementation using Numpy with Autodiff
 
 前作：[PyNet: Use NumPy to build neuron network](https://github.com/Kaslanarian/PyNet)。在那里我们基于求导规则实现了全连接网络。在这里，我们向当今的深度学习框架看齐，实现属于自己的DL框架。
 
@@ -11,7 +11,7 @@
 ![](https://img.shields.io/github/stars/Kaslanarian/PyDyNet?style=social)
 ![](https://img.shields.io/github/forks/Kaslanarian/PyDyNet?style=social)
 
-<details><summary>更新日志</summary>
+<details><summary>前期更新日志</summary>
 <p>
 
 - 5.10: ver 0.0.1 修改损失函数的定义方式：加入reduction机制，加入Embedding;
@@ -25,10 +25,11 @@
 - 8.18: ver 0.0.8 加入学习率调整策略，实现了训练过程中自动调节学习率；
 - 10.21: ver 0.0.9 加入tensor的split方法，基于此改进了RNN；
 - 10.23: ver 0.0.10 重写RNN, LSTM和GRU，支持多层双向；
-- **2024.6.28**: ver 0.1.0 修正了Cuda训练的问题, 加入多个可复现测试: (MLP, LeNet, BN & Dropout, RNN).
 
 </p>
 </details>
+
+**2024.6.29**: ver 0.1 增加了LayerNorm和Embedding; 修正了cuda训练的问题; 加入多个可复现测试: (MLP, LeNet, BN & Dropout, RNN, **Transformer**).
 
 ## Overview
 
@@ -36,13 +37,13 @@ PyDyNet也是纯NumPy(0.0.7版本后加入CuPy，其用法和NumPy一致)实现�
 
 ```mermaid
 graph BT
-   N(numpy.ndarray/cupy.ndarray) ----> ds(Dataset) ----> Data(DataLoader)--> Mission
+   N(numpy/cupy.ndarray) ----> ds(Dataset) ----> Data(DataLoader)--> Mission
    N --> A(Tensor) --Eager execution--> B(Basic operators: add, exp, etc)
    B -.Autograd-.-> A
    B --> CO(Complex operators:softmax,etc)
    --> f(Function:linear, conv2d, etc) 
    --> M(Basic Module:Linear,Conv2d,etc)
-   --> CM(Advanced Module:CNN,RNN,etc)
+   --> CM(Advanced Module:CNN,RNN,Transformer,...)
    --> Mission(PyDyNet)
    N --> GD(Optimizer:SGD, Adam, etc) ----> LS(lr_scheduler:StepLR, etc)--> Mission
 ```
@@ -256,11 +257,22 @@ python setup.py install
 
 <img src="src/RNN.png" alt="RNN" style="zoom:67%;" />
 
-## cuda相关
+### Transformer
 
-在训练batch size为128, 测试batch size为512情况下，两种模型的训练速度比较:
+[transformer.py](tests/transformer.py)中是一个用Transformer训练文本分类模型的例子. 训练结果:
 
-|     Net     | CPU time (s) per Epoch | GPU time (s) per Epoch |
-| :---------: | :--------------------: | :--------------------: |
-| ResidualMLP |      20.256±0.138      |       2.903±.018       |
-|    LeNet    |     239.664±2.108      |      10.148±0.026      |
+<img src="src/transformer.png" alt="transformer" style="zoom:67%;" />
+
+> 数据集 (CoLA) 链接: <https://nyu-mll.github.io/CoLA/cola_public_1.1.zip>
+
+## cuda加速
+
+在训练batch size为128, 测试batch size为512情况下，模型在CPU和GPU上的训练速度比较:
+
+|         Net         |      Dataset      | CPU time (s) per Epoch | GPU time (s) per Epoch |
+| :-----------------: | :---------------: | :--------------------: | :--------------------: |
+|     ResidualMLP     | MNIST (80000×574) |      20.256±0.138      |       2.903±.018       |
+|        LeNet        | MNIST (80000×574) |     239.664±2.108      |      10.148±0.026      |
+| 1-layer Transformer | CoLA (8551×45×64) |      17.503±0.251      |      1.125±0.002       |
+
+设备: Nvidia GeForce RTX 3090.

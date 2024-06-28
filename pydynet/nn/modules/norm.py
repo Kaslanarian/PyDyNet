@@ -179,12 +179,10 @@ class LayerNorm(Module):
 
     def forward(self, x):
         if self._train:
-            mean = x.mean(*range(x.ndim - len(self.normalized_shape)))
+            axis = tuple(range(x.ndim - len(self.normalized_shape)))
+            mean = x.mean(axis)
             center_data = x - mean
-            var = tensor.mean(
-                tensor.square(center_data),
-                tuple(range(x.ndim - len(self.normalized_shape))),
-            )
+            var = tensor.square(center_data).mean(axis)
             std_data = center_data / tensor.sqrt(var + self.eps)
             self.running_mean *= (1 - self.momentum)
             self.running_mean += self.momentum * mean

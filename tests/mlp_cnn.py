@@ -123,8 +123,8 @@ if __name__ == "__main__":
 
     device = 'cuda' if pdn.cuda.is_available() and use_cuda else 'cpu'
 
-    net = ResidualMLP().to(device)
-    # net = ConvNet().to(device)
+    # net = ResidualMLP().to(device)
+    net = ConvNet().to(device)
     print(net)
 
     optimizer = Adam(net.parameters(), lr=LR)
@@ -177,6 +177,6 @@ if __name__ == "__main__":
             TEST_ACC="{:.4f}".format(test_acc),
             TRAIN_ACC="{:.4f}".format(train_acc),
         )
-        info_list.append([train_acc, test_acc])
+        info_list.append([train_acc.item(), test_acc.item()])
 
-    print(info_list)
+    print(np.array(info_list))
